@@ -1,5 +1,3 @@
-# MAJO_Eng
-La app de estudio de inglés de Majo
 # ⭐ Star English
 
 Mini-app de práctica de inglés para repasar **Starter + Unidades 1, 2 y 3** del libro Oxford *Bright* (3er grado).

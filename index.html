@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Star English">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#C9D8FF">
+<title>Star English</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+  html,body{margin:0;padding:0;background:#C9D8FF;-webkit-tap-highlight-color:transparent;}
+  .flex{display:flex}.grid{display:grid}.inline-flex{display:inline-flex}
+  .items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}
+  .min-h-screen{min-height:100vh}.w-full{width:100%}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect } = React;
+if(!window.__store){
+  window.storage = {
+    get: async (k) => { try{ const v = localStorage.getItem(k); return v ? {value:v} : null; }catch(e){ return null; } },
+    set: async (k,v) => { try{ localStorage.setItem(k,v); }catch(e){} return {value:v}; }
+  };
+  window.__store = true;
+}
+
+
+/*
+  Star English v5 — práctica para Majo (Oxford "Bright", Starter–Unit 3)
+  · Inglés didáctico · ilustraciones · sin pistas.
+  · Today's session (sesión mixta + repaso de errores + racha).
+  · NUEVO: Progress — historial de cada práctica (fecha, puntaje y errores).
+*/
+
+const VERSION = "v5";
+const C = { ink:"#2B2150", grape:"#6B4EE6", grapeDark:"#5438c9", sun:"#FFC233", grass:"#34BE6B", coral:"#FF6B6B", sky1:"#C9D8FF", sky2:"#EBD9FF" };
+
+const A = 'stroke="#2B2150" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+const ICON = {
+  tree:`<path ${A} d="M50 86 L50 60"/><circle cx="50" cy="42" r="22" ${A}/>`,
+  house:`<path ${A} d="M18 50 L50 24 L82 50"/><rect x="28" y="50" width="44" height="34" ${A}/><rect x="44" y="62" width="14" height="22" ${A}/>`,
+  shop:`<rect x="22" y="46" width="56" height="38" ${A}/><path ${A} d="M18 46 L82 46 L78 32 L22 32 Z"/><path ${A} d="M31 32 L35 46 M43 32 L47 46 M55 32 L59 46 M67 32 L71 46"/><rect x="44" y="62" width="14" height="22" ${A}/>`,
+  castle:`<path ${A} d="M24 80 L24 44 L30 44 L30 38 L36 38 L36 44 L46 44 L46 36 L54 36 L54 44 L64 44 L64 38 L70 38 L70 44 L76 44 L76 80 Z"/><rect x="44" y="62" width="12" height="18" ${A}/><path ${A} d="M50 36 L50 28 L58 30 L50 32"/>`,
+  car:`<path ${A} d="M14 64 Q14 52 28 52 L44 52 L52 42 L66 42 L76 52 L86 52 Q90 53 90 62 L90 66 L14 66 Z"/><circle cx="32" cy="68" r="7" ${A}/><circle cx="72" cy="68" r="7" ${A}/>`,
+  bus:`<rect x="14" y="40" width="72" height="34" rx="6" ${A}/><rect x="21" y="46" width="12" height="12" ${A}/><rect x="38" y="46" width="12" height="12" ${A}/><rect x="55" y="46" width="12" height="12" ${A}/><rect x="72" y="46" width="9" height="12" ${A}/><circle cx="30" cy="78" r="6" ${A}/><circle cx="70" cy="78" r="6" ${A}/>`,
+  train:`<rect x="42" y="38" width="34" height="32" rx="3" ${A}/><rect x="18" y="50" width="22" height="20" ${A}/><rect x="58" y="28" width="9" height="12" ${A}/><circle cx="28" cy="76" r="5" ${A}/><circle cx="50" cy="76" r="5" ${A}/><circle cx="68" cy="76" r="5" ${A}/>`,
+  plane:`<path ${A} d="M10 56 L66 50 Q86 48 86 53 Q86 58 66 60 L40 62 L26 74 L20 74 L28 60 L16 58 L10 62 Z"/><path ${A} d="M44 53 L58 30 L64 31 L54 55"/>`,
+  lorry:`<rect x="14" y="42" width="40" height="30" ${A}/><path ${A} d="M54 52 L54 72 L86 72 L86 62 L74 52 Z"/><circle cx="28" cy="76" r="6" ${A}/><circle cx="70" cy="76" r="6" ${A}/>`,
+  motorbike:`<circle cx="28" cy="66" r="13" ${A}/><circle cx="72" cy="66" r="13" ${A}/><path ${A} d="M28 66 L48 66 L58 48 L70 48 M48 66 L58 48 M40 48 L54 48"/>`,
+  bike:`<circle cx="30" cy="64" r="12" ${A}/><circle cx="72" cy="64" r="12" ${A}/><path ${A} d="M30 64 L46 64 L56 44 L68 64 M46 64 L56 44 M40 44 L52 44 M62 44 L70 44"/>`,
+  apple:`<path ${A} d="M50 36 Q34 32 32 52 Q32 74 50 78 Q68 74 68 52 Q66 32 50 36"/><path ${A} d="M50 36 Q52 28 60 26"/>`,
+  dog:`<path ${A} d="M32 74 L32 52 Q32 44 42 44 L60 44 Q70 44 70 52 L70 74 M36 44 L30 32 L42 40 M66 44 L72 32 L60 40"/><circle cx="43" cy="54" r="2.2" fill="#2B2150"/><circle cx="59" cy="54" r="2.2" fill="#2B2150"/><path ${A} d="M51 60 L51 64"/>`,
+  swim:`<path ${A} d="M14 66 Q26 58 38 66 T62 66 T86 66"/><circle cx="40" cy="48" r="7" ${A}/><path ${A} d="M47 50 Q58 42 68 50"/>`,
+  necklace:`<path ${A} d="M28 32 Q50 66 72 32"/><circle cx="50" cy="58" r="6" ${A}/>`,
+  dinosaur:`<path ${A} d="M20 76 Q20 54 36 54 Q40 34 54 34 Q58 24 68 30 Q60 34 62 44 Q78 48 78 64 L78 76 M40 76 L40 66 M62 76 L62 66"/>`,
+  football:`<circle cx="50" cy="52" r="22" ${A}/><path ${A} d="M50 38 L59 46 L55 57 L45 57 L41 46 Z"/><path ${A} d="M50 30 L50 38 M68 46 L59 46 M55 57 L62 66 M45 57 L38 66 M32 46 L41 46"/>`,
+  basketball:`<circle cx="50" cy="52" r="22" ${A}/><path ${A} d="M50 30 L50 74 M28 52 L72 52 M34 37 Q50 52 34 67 M66 37 Q50 52 66 67"/>`,
+  painting:`<rect x="30" y="38" width="40" height="30" ${A}/><path ${A} d="M50 68 L50 84 M36 84 L50 68 L64 84"/><path ${A} d="M37 58 Q44 48 50 58 T63 58"/><circle cx="42" cy="46" r="3" ${A}/>`,
+  flask:`<path ${A} d="M44 28 L56 28 M46 28 L46 48 L30 76 Q28 82 38 82 L62 82 Q72 82 70 76 L54 48 L54 28"/><path ${A} d="M38 64 L62 64"/>`,
+  chefhat:`<path ${A} d="M34 60 L66 60 L64 80 L36 80 Z"/><path ${A} d="M34 60 Q24 60 28 48 Q23 38 36 38 Q40 28 52 32 Q62 26 66 38 Q79 40 72 50 Q78 60 64 60"/>`,
+  boy:`<circle cx="50" cy="52" r="22" ${A}/><path ${A} d="M28 44 Q50 24 72 44"/><circle cx="43" cy="52" r="2.6" fill="#2B2150"/><circle cx="57" cy="52" r="2.6" fill="#2B2150"/><path ${A} d="M42 62 Q50 70 58 62"/>`,
+  facehappy:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="46" r="2.8" fill="#2B2150"/><circle cx="58" cy="46" r="2.8" fill="#2B2150"/><path ${A} d="M40 58 Q50 68 60 58"/>`,
+  faceangry:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="48" r="2.8" fill="#2B2150"/><circle cx="58" cy="48" r="2.8" fill="#2B2150"/><path ${A} d="M37 40 L48 45 M63 40 L52 45"/><path ${A} d="M40 64 Q50 56 60 64"/>`,
+  facehungry:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="46" r="2.8" fill="#2B2150"/><circle cx="58" cy="46" r="2.8" fill="#2B2150"/><path ${A} d="M42 58 Q50 66 58 58 Z"/><path ${A} d="M50 62 L50 66"/>`,
+  facescared:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="46" r="3.4" fill="#2B2150"/><circle cx="58" cy="46" r="3.4" fill="#2B2150"/><circle cx="50" cy="62" r="4.5" ${A}/><path ${A} d="M70 36 Q73 43 70 45 Q67 43 70 36"/>`,
+  facesad:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="46" r="2.8" fill="#2B2150"/><circle cx="58" cy="46" r="2.8" fill="#2B2150"/><path ${A} d="M40 64 Q50 56 60 64"/>`,
+};
+function Icon({ name, size = 64 }) {
+  if (!ICON[name]) return null;
+  return <span style={{ display: "inline-flex", lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 100 100" width="${size}" height="${size}">${ICON[name]}</svg>` }} />;
+}
+
+const MISSIONS = [
+  { id:"thereis", emoji:"🏘️", name:"There is / There are", sub:"one is · many are", questions:[
+    { pics:["tree"], badge:"yes", text:"Is there a park?", options:["Yes, there is.","Yes, there are.","No, there isn't."], answer:"Yes, there is.", tip:"One thing → there is." },
+    { pics:["shop","shop"], badge:"yes", text:"Are there any shops?", options:["Yes, there are.","Yes, there is."], answer:"Yes, there are.", tip:"Many → there are." },
+    { pics:["house"], badge:"no", text:"Is there a school?", options:["No, there isn't.","No, there aren't.","Yes, there is."], answer:"No, there isn't.", tip:"One → there isn't." },
+    { pics:["tree","tree"], badge:"no", text:"Are there any parks?", options:["No, there aren't.","No, there isn't."], answer:"No, there aren't.", tip:"Many → there aren't." },
+    { pics:["car","car"], badge:"yes", text:"Are there any cars?", options:["Yes, there are.","Yes, there is."], answer:"Yes, there are." },
+    { pics:["castle"], badge:"no", text:"Is there a castle?", options:["No, there isn't.","No, there aren't."], answer:"No, there isn't." },
+    { pics:["house"], badge:"no", text:"Is there a hospital?", options:["No, there isnt.","No, there isn't.","No, there aren't."], answer:"No, there isn't.", tip:"isn't has an apostrophe." },
+    { pics:["bus","bus"], badge:"no", text:"Are there any buses?", options:["No, there arent.","No, there aren't.","No, there isn't."], answer:"No, there aren't.", tip:"aren't has an apostrophe." },
+  ]},
+  { id:"ilike", emoji:"💬", name:"I like / I can / I've got", sub:"not 'I'm like'", questions:[
+    { pics:["apple"], text:"I ___ apples.", options:["I'm like","I like"], answer:"I like", tip:"Use I like with another word." },
+    { pics:["facehappy"], text:"I ___ happy.", options:["I like","I'm","I've got"], answer:"I'm", tip:"Use I'm for feelings: I'm happy." },
+    { pics:["swim"], text:"I ___ swim.", options:["I'm can","I can"], answer:"I can" },
+    { pics:["dog"], text:"I ___ a dog.", options:["I'm have","I've got"], answer:"I've got", tip:"I've got = I have." },
+    { text:"I ___ from Argentina.", options:["I like","I'm","I've got"], answer:"I'm", tip:"Use I'm from + place." },
+    { pics:["football"], text:"I ___ football.", options:["I'm like","I like"], answer:"I like" },
+    { pics:["facescared"], text:"I ___ scared.", options:["I'm","I can","I like"], answer:"I'm" },
+    { pics:["bike"], text:"I ___ ride a bike.", options:["I'm can","I can"], answer:"I can" },
+  ]},
+  { id:"thisthese", emoji:"🚂", name:"This is / These are", sub:"one · many + s", questions:[
+    { pics:["train"], text:"___ a train.", options:["This is","These are"], answer:"This is", tip:"One → This is." },
+    { pics:["car","car"], text:"These are my ___.", options:["car","cars"], answer:"cars", tip:"Many → add -s: cars." },
+    { pics:["bus","bus"], text:"These are my ___.", options:["bus","buses"], answer:"buses", tip:"bus → buses." },
+    { pics:["plane"], text:"___ my plane.", options:["This is","These are"], answer:"This is" },
+    { pics:["lorry","lorry"], text:"These are my ___.", options:["lorry","lorries"], answer:"lorries", tip:"lorry → lorries." },
+    { pics:["motorbike"], text:"___ a motorbike.", options:["This is","These are"], answer:"This is" },
+    { pics:["car","car"], text:"___ my cars.", options:["This is","These are"], answer:"These are" },
+  ]},
+  { id:"spell", emoji:"✏️", name:"Spelling Stars", sub:"look and choose", ask:"Which one is correct?", questions:[
+    { pics:["castle"], options:["castel","castle","casle"], answer:"castle" },
+    { pics:["painting"], options:["paiting","painting","paintin"], answer:"painting" },
+    { pics:["flask"], options:["sientist","scientist","scientistc"], answer:"scientist" },
+    { pics:["boy"], options:["broder","brother","bruther"], answer:"brother" },
+    { pics:["necklace"], options:["netcklas","necklace","neclace"], answer:"necklace" },
+    { pics:["dinosaur"], options:["dinosor","dinosaur","dinasaur"], answer:"dinosaur" },
+    { pics:["football"], options:["futbol","football","footbal"], answer:"football" },
+    { pics:["basketball"], options:["basketbal","basketball","basquetbol"], answer:"basketball" },
+    { swatch:"#34BE6B", options:["gren","green","grin"], answer:"green" },
+    { swatch:"#FF8A3D", options:["orage","orange","orenge"], answer:"orange" },
+    { swatch:"#FFC233", options:["yellou","yellow","yelow"], answer:"yellow" },
+    { pics:["apple"], options:["aple","apple","aplee"], answer:"apple" },
+  ]},
+  { id:"yesno", emoji:"🙋", name:"Yes / No answers", sub:"look at the picture", questions:[
+    { pics:["faceangry"], text:"Is she happy?", options:["No, she isn't.","Yes, she is.","No, she isnt."], answer:"No, she isn't.", tip:"Capital letter, comma, and isn't." },
+    { pics:["facehappy"], text:"Is he sad?", options:["No, he isn't.","Yes, he is."], answer:"No, he isn't." },
+    { pics:["facehungry"], text:"Is she hungry?", options:["Yes, she is.","No, she isn't."], answer:"Yes, she is." },
+    { pics:["facescared"], text:"Is he scared?", options:["Yes, he is.","No, he isn't."], answer:"Yes, he is." },
+    { pics:["chefhat"], text:"Is he a cook?", options:["Yes, he is.","No, he isn't."], answer:"Yes, he is." },
+    { pics:["football"], text:"Is she a teacher?", options:["No, she isn't.","Yes, she is."], answer:"No, she isn't.", tip:"She plays football." },
+    { pics:["motorbike"], badge:"yes", text:"Has she got a motorbike?", options:["Yes, she has.","Yes, she is.","Yes, she have."], answer:"Yes, she has.", tip:"Has she got…? → Yes, she has." },
+    { pics:["dog"], badge:"no", text:"Has he got a dog?", options:["No, he hasn't.","No, he isn't."], answer:"No, he hasn't." },
+  ]},
+  { id:"questions", emoji:"❓", name:"Make the question", sub:"word order", ask:"Choose the question.", questions:[
+    { context:"Friend: My name is Sara.", options:["What you name?","What's your name?","What name your?"], answer:"What's your name?" },
+    { context:"Friend: I'm eight.", options:["How old are you?","How old you are?","How you old?"], answer:"How old are you?" },
+    { context:"Friend: I'm from Argentina.", options:["Where you from?","Where are you from?","From where you?"], answer:"Where are you from?" },
+    { context:"Friend: Yes, I do. I like football.", options:["You like football?","Do you like football?","Like you football?"], answer:"Do you like football?" },
+    { context:"Friend: Yes, I have. I've got a dog.", options:["Have you got a dog?","You have a dog?","Got you a dog?"], answer:"Have you got a dog?" },
+    { context:"Friend: It's in March.", options:["When your birthday?","When is your birthday?","When birthday you?"], answer:"When is your birthday?" },
+    { context:"Friend: My favourite team is West Ham.", options:["What your favourite team?","What's your favourite team?","What favourite your team?"], answer:"What's your favourite team?" },
+    { context:"Friend: I'm wearing a t-shirt.", options:["What you wearing?","What are you wearing?","What wearing you?"], answer:"What are you wearing?" },
+  ]},
+  { id:"connect", emoji:"🔗", name:"and / but / or", sub:"joining words", questions:[
+    { text:"I like pizza ___ I don't like fish.", options:["and","but","or"], answer:"but", tip:"A different idea → but." },
+    { text:"I like soup ___ apples.", options:["and","but","or"], answer:"and", tip:"Adding things → and." },
+    { text:"I don't like lettuce ___ fish.", options:["and","but","or"], answer:"or", tip:"After don't like → or." },
+    { text:"I can swim ___ I can't fly.", options:["and","but"], answer:"but" },
+    { text:"I've got a ball ___ I haven't got a bike.", options:["and","but"], answer:"but" },
+    { text:"I like dogs ___ cats.", options:["and","but"], answer:"and" },
+    { text:"Is your birthday in March ___ in May?", options:["and","or"], answer:"or" },
+    { text:"I'm tall ___ I've got curly hair.", options:["and","but"], answer:"and" },
+  ]},
+];
+
+const ALL = [];
+MISSIONS.forEach((m) => m.questions.forEach((q) => ALL.push({ ...q, _ask: m.ask, _mission: m.name, _id: m.id })));
+const enriched = (m) => m.questions.map((q) => ({ ...q, _ask: m.ask, _mission: m.name, _id: m.id }));
+
+const WEIGHTS = { thereis:3, thisthese:3, spell:3, ilike:2, yesno:2, questions:1, connect:1 };
+function buildSession(n = 10) {
+  const pool = [];
+  ALL.forEach((q) => { const w = WEIGHTS[q._id] || 1; for (let i = 0; i < w; i++) pool.push(q); });
+  const chosen = [], used = new Set(); let guard = 0;
+  while (chosen.length < n && guard < 800) { guard++; const q = pool[Math.floor(Math.random() * pool.length)]; if (!used.has(q)) { used.add(q); chosen.push(q); } }
+  return chosen;
+}
+const todayStr = () => new Date().toISOString().slice(0, 10);
+const yestStr = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+const descQ = (q) => q.text ? q.text : q.context ? q.context : (q.answer ? "Spelling: " + q.answer : "—");
+const packWrong = (arr) => arr.map((q) => ({ q: descQ(q), a: q.answer, topic: q._mission }));
+
+const CHEERS = ["Great!", "Yes!", "Well done!", "Brilliant!", "Star!", "Super!"];
+
+function StarSvg({ size = 28, face = false, color = C.sun, bounce = false }) {
+  return (
+    <span className="inline-flex items-center justify-center" style={{ animation: bounce ? "lumiBounce 0.6s ease" : "none", lineHeight: 1 }}>
+      <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M24 3l5.5 13.3L44 17.6l-10.8 9.3L36.6 41 24 33.5 11.4 41l3.4-14.1L4 17.6l14.5-1.3z" fill={color} stroke={C.ink} strokeWidth="2.2" strokeLinejoin="round" />
+        {face && (<><circle cx="19" cy="22" r="2.3" fill={C.ink} /><circle cx="29" cy="22" r="2.3" fill={C.ink} /><path d="M19 27 q5 4 10 0" fill="none" stroke={C.ink} strokeWidth="2" strokeLinecap="round" /></>)}
+      </svg>
+    </span>
+  );
+}
+function Badge({ kind }) {
+  const yes = kind === "yes";
+  return (<span style={{ position:"absolute", top:-6, right:-6, width:26, height:26, borderRadius:"50%", background: yes ? C.grass : C.coral, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontWeight:800, fontSize:15, boxShadow:"0 2px 0 rgba(43,33,80,.2)" }}>{yes ? "✓" : "✗"}</span>);
+}
+
+function App() {
+  const [screen, setScreen] = useState("home");
+  const [best, setBest] = useState({});
+  const [meta, setMeta] = useState({ streak: 0, lastDay: null, sessions: 0 });
+  const [log, setLog] = useState([]);
+  const [qs, setQs] = useState([]);
+  const [title, setTitle] = useState("");
+  const [isSession, setIsSession] = useState(false);
+  const [missionId, setMissionId] = useState(null);
+  const [retrying, setRetrying] = useState(false);
+  const [first, setFirst] = useState({ correct: 0, total: 0, wrong: [] });
+  const [finalCorrect, setFinalCorrect] = useState(0);
+  const [finalTotal, setFinalTotal] = useState(0);
+
+  useEffect(() => { (async () => {
+    try { const r = await window.storage.get("majo-best-v5"); if (r && r.value) setBest(JSON.parse(r.value)); } catch (e) {}
+    try { const r = await window.storage.get("majo-meta-v5"); if (r && r.value) setMeta(JSON.parse(r.value)); } catch (e) {}
+    try { const r = await window.storage.get("majo-log-v5"); if (r && r.value) setLog(JSON.parse(r.value)); } catch (e) {}
+  })(); }, []);
+  const saveBest = async (n) => { setBest(n); try { await window.storage.set("majo-best-v5", JSON.stringify(n)); } catch (e) {} };
+  const saveMeta = async (n) => { setMeta(n); try { await window.storage.set("majo-meta-v5", JSON.stringify(n)); } catch (e) {} };
+  const addLog = async (rec) => { const n = [rec, ...log].slice(0, 80); setLog(n); try { await window.storage.set("majo-log-v5", JSON.stringify(n)); } catch (e) {} };
+  const clearLog = async () => { setLog([]); try { await window.storage.set("majo-log-v5", JSON.stringify([])); } catch (e) {} };
+
+  const totalStars = Object.values(best).reduce((a, b) => a + b, 0);
+  const doneToday = meta.lastDay === todayStr();
+
+  const startMission = (m) => { setQs(enriched(m)); setTitle(m.name); setIsSession(false); setMissionId(m.id); setRetrying(false); setScreen("play"); };
+  const startSession = () => { setQs(buildSession(10)); setTitle("Today's session"); setIsSession(true); setMissionId(null); setRetrying(false); setScreen("play"); };
+
+  const closeSession = (c, t, wrongArr) => {
+    const last = meta.lastDay; let streak = meta.streak || 0;
+    if (last !== todayStr()) streak = (last === yestStr()) ? streak + 1 : 1;
+    saveMeta({ streak, lastDay: todayStr(), sessions: (meta.sessions || 0) + 1 });
+    addLog({ t: new Date().toISOString(), kind: "Today's session", correct: c, total: t, wrong: packWrong(wrongArr) });
+    setFinalCorrect(c); setFinalTotal(t); setScreen("end");
+  };
+
+  const onFinish = (correct, total, wrong) => {
+    if (isSession) {
+      if (!retrying) {
+        setFirst({ correct, total, wrong });
+        if (wrong.length > 0) { setRetrying(true); setQs(wrong); setTitle("Try again!"); return; }
+        closeSession(correct, total, []);
+      } else {
+        closeSession(first.correct, first.total, first.wrong);
+      }
+    } else {
+      const prev = best[missionId] || 0; if (correct > prev) saveBest({ ...best, [missionId]: correct });
+      addLog({ t: new Date().toISOString(), kind: title, correct, total, wrong: packWrong(wrong) });
+      setFinalCorrect(correct); setFinalTotal(total); setScreen("end");
+    }
+  };
+
+  const bg = `radial-gradient(120% 90% at 50% 0%, ${C.sky2} 0%, ${C.sky1} 60%, #B9C8FF 100%)`;
+  return (
+    <div className="min-h-screen w-full flex justify-center" style={{ background: bg, fontFamily: "'Fredoka','Baloo 2','Trebuchet MS',system-ui,sans-serif", color: C.ink, padding: "16px" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
+        @keyframes lumiBounce{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-10px) scale(1.15)}60%{transform:translateY(0) scale(.96)}100%{transform:translateY(0) scale(1)}}
+        @keyframes floatUp{0%{transform:translateY(0) scale(.6);opacity:0}20%{opacity:1}100%{transform:translateY(-90px) scale(1.1);opacity:0}}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-7px)}40%{transform:translateX(7px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+        @keyframes popIn{0%{transform:scale(.8);opacity:0}100%{transform:scale(1);opacity:1}}
+        @media (prefers-reduced-motion: reduce){*{animation:none!important}}
+        .tap{transition:transform .08s ease, box-shadow .12s ease;} .tap:active{transform:translateY(2px);}
+        .opt:focus-visible{outline:3px solid ${C.grape};outline-offset:2px;}
+      `}</style>
+
+      <div className="w-full" style={{ maxWidth: 440 }}>
+        <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
+          <div className="flex items-center" style={{ gap: 8 }}><StarSvg size={30} face /><span style={{ fontWeight: 700, fontSize: 22 }}>Star English</span></div>
+          <div className="flex items-center" style={{ gap: 6, background:"#fff", borderRadius:999, padding:"6px 12px", boxShadow:"0 3px 0 rgba(43,33,80,.15)", fontWeight:700 }}><StarSvg size={20} /> <span style={{ fontSize: 16 }}>{totalStars}</span></div>
+        </div>
+
+        {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
+        {screen === "play" && <Play qs={qs} title={title} isSession={isSession} onFinish={onFinish} onHome={() => setScreen("home")} />}
+        {screen === "end" && <End isSession={isSession} title={title} correct={finalCorrect} total={finalTotal} streak={meta.streak} onAgain={() => (isSession ? startSession() : startMission(MISSIONS.find((m) => m.id === missionId)))} onHome={() => setScreen("home")} onProgress={() => setScreen("progress")} />}
+        {screen === "progress" && <Progress log={log} meta={meta} totalStars={totalStars} onClear={clearLog} onHome={() => setScreen("home")} />}
+
+        <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: "#9a93c0" }}>Star English · {VERSION}</div>
+      </div>
+    </div>
+  );
+}
+
+function Home({ best, meta, doneToday, onStart, onSession, onProgress }) {
+  return (
+    <div style={{ animation: "popIn .25s ease" }}>
+      <div className="flex items-center" style={{ gap: 12, background:"#fff", borderRadius:22, padding:"14px 16px", marginBottom:12, boxShadow:"0 4px 0 rgba(43,33,80,.12)" }}>
+        <StarSvg size={42} face bounce />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: 19 }}>Hi Majo! 👋</div>
+          <div style={{ fontSize: 13.5, color: "#6a6390" }}>{meta.streak > 0 ? `🔥 ${meta.streak}-day streak` : "Let's start a streak! 🔥"}</div>
+        </div>
+        <button onClick={onProgress} className="tap" style={{ border:"none", background:"#F2EFFF", color:C.grape, fontWeight:800, borderRadius:14, padding:"8px 12px", cursor:"pointer", fontSize:13 }}>📊 Progress</button>
+      </div>
+
+      <button onClick={onSession} className="tap opt" style={{ width:"100%", textAlign:"left", border:"none", borderRadius:22, padding:"16px 18px", cursor:"pointer", color:"#fff", background:`linear-gradient(135deg, ${C.grape}, #8a6bff)`, boxShadow:`0 5px 0 ${C.grapeDark}`, marginBottom:16, display:"flex", alignItems:"center", gap:14 }}>
+        <div style={{ fontSize: 34 }}>{doneToday ? "✅" : "⭐"}</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>Today's session</div>
+          <div style={{ fontSize: 13, opacity: .92 }}>{doneToday ? "Done today — play again?" : "10 mixed questions · 3–5 min"}</div>
+        </div>
+        <div style={{ fontSize: 22 }}>▶</div>
+      </button>
+
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#6a6390", margin: "0 2px 8px" }}>Or practise one thing:</div>
+      <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {MISSIONS.map((m) => {
+          const b = best[m.id] || 0, total = m.questions.length;
+          return (
+            <button key={m.id} onClick={() => onStart(m)} className="tap opt" style={{ textAlign:"left", background:"#fff", border:"none", borderRadius:20, padding:14, cursor:"pointer", boxShadow:"0 4px 0 rgba(43,33,80,.12)", display:"flex", flexDirection:"column", gap:6, minHeight:120 }}>
+              <div style={{ fontSize: 28 }}>{m.emoji}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.1 }}>{m.name}</div>
+              <div style={{ fontSize: 11.5, color: "#7a7398", flex: 1 }}>{m.sub}</div>
+              <div className="flex items-center" style={{ gap: 4, fontSize: 12, fontWeight: 700, color: b ? C.grape : "#b9b4cf" }}><StarSvg size={15} color={b ? C.sun : "#dcd8ee"} /> {b}/{total}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Play({ qs, title, isSession, onFinish, onHome }) {
+  const [qi, setQi] = useState(0);
+  const [picked, setPicked] = useState(null);
+  const [correct, setCorrect] = useState(0);
+  const [wrong, setWrong] = useState([]);
+  const [cheer, setCheer] = useState("");
+  const [pop, setPop] = useState(false);
+  useEffect(() => { setQi(0); setPicked(null); setCorrect(0); setWrong([]); setCheer(""); }, [qs]);
+
+  const q = qs[qi]; if (!q) return null;
+  const total = qs.length;
+  const isRight = picked && picked === q.answer;
+  const isWrong = picked && picked !== q.answer;
+  const ask = q._ask || q.ask;
+
+  const choose = (opt) => {
+    if (picked) return;
+    setPicked(opt);
+    if (opt === q.answer) { setCorrect((c) => c + 1); setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)]); setPop(true); setTimeout(() => setPop(false), 650); }
+    else { setWrong((w) => [...w, q]); setCheer("Almost! Look →"); }
+  };
+  const next = () => { if (qi + 1 < total) { setQi(qi + 1); setPicked(null); setCheer(""); } else { onFinish(correct, total, wrong); } };
+
+  return (
+    <div style={{ animation: "popIn .2s ease" }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 10 }}>
+        <button onClick={onHome} className="tap" style={{ border:"none", background:"#fff", borderRadius:999, width:40, height:40, cursor:"pointer", fontSize:18, boxShadow:"0 3px 0 rgba(43,33,80,.12)" }}>←</button>
+        <div className="flex items-center" style={{ gap: 5 }}>{Array.from({ length: total }).map((_, i) => (<span key={i} style={{ width: 9, height: 9, borderRadius: 99, background: i < qi ? C.grass : i === qi ? C.grape : "#fff", boxShadow:"0 2px 0 rgba(43,33,80,.1)" }} />))}</div>
+        <div style={{ fontWeight: 700, fontSize: 14, width: 40, textAlign: "right" }}>{qi + 1}/{total}</div>
+      </div>
+
+      {isSession && <div style={{ textAlign: "center", fontSize: 12.5, fontWeight: 700, color: C.grape, marginBottom: 6 }}>{title}{q._mission ? ` · ${q._mission}` : ""}</div>}
+
+      <div className="flex items-center" style={{ gap: 10, minHeight: 44, marginBottom: 8 }}>
+        <StarSvg size={38} face bounce={pop} color={isWrong ? C.coral : C.sun} />
+        <div style={{ fontWeight: 700, fontSize: 17, color: isRight ? C.grass : isWrong ? C.coral : C.ink, position: "relative" }}>
+          {cheer || (isSession ? "Keep going!" : title)}
+          {pop && (<span style={{ position: "absolute", left: 18, top: -6 }}>{["⭐","✨","⭐"].map((s, i) => (<span key={i} style={{ position: "absolute", left: i * 16, animation: "floatUp .65s ease forwards", animationDelay: `${i * 60}ms` }}>{s}</span>))}</span>)}
+        </div>
+      </div>
+
+      <div style={{ background:"#fff", borderRadius:24, padding:18, boxShadow:"0 5px 0 rgba(43,33,80,.12)", animation: isWrong ? "shake .4s ease" : "none", marginBottom:14 }}>
+        {q.pics && (<div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:8 }}><span style={{ position:"relative", display:"inline-flex", gap:6 }}>{q.pics.map((n, i) => <Icon key={i} name={n} size={66} />)}{q.badge && <Badge kind={q.badge} />}</span></div>)}
+        {q.swatch && (<div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><span style={{ width:56, height:56, borderRadius:"50%", background:q.swatch, border:"3px solid #2B2150" }} /></div>)}
+        {q.context && <div style={{ fontSize:16, textAlign:"center", color:"#5a5482", marginBottom:6 }}>{q.context}</div>}
+        {ask && <div style={{ fontSize:14.5, color:"#6a6390", textAlign:"center", marginBottom: q.text ? 4 : 0 }}>{ask}</div>}
+        {q.text && <div style={{ fontSize:21, fontWeight:600, textAlign:"center", lineHeight:1.3 }}>{q.text}</div>}
+      </div>
+
+      <div className="flex" style={{ flexDirection: "column", gap: 10 }}>
+        {q.options.map((opt) => {
+          let bg = "#fff", fg = C.ink, shadow = "0 4px 0 rgba(43,33,80,.14)", border = "3px solid #fff";
+          if (picked) {
+            if (opt === q.answer) { bg = C.grass; fg = "#fff"; shadow = "0 4px 0 #259652"; border = `3px solid ${C.grass}`; }
+            else if (opt === picked) { bg = C.coral; fg = "#fff"; shadow = "0 4px 0 #d94f4f"; border = `3px solid ${C.coral}`; }
+            else { fg = "#b4afca"; }
+          }
+          return (<button key={opt} className="tap opt" onClick={() => choose(opt)} disabled={!!picked} style={{ background:bg, color:fg, border, borderRadius:16, padding:"15px 16px", fontSize:18, fontWeight:600, cursor: picked ? "default" : "pointer", boxShadow:shadow, fontFamily:"inherit" }}>{opt}</button>);
+        })}
+      </div>
+
+      {picked && (
+        <div style={{ marginTop: 14, animation: "popIn .2s ease" }}>
+          {isWrong && <div style={{ textAlign: "center", fontWeight: 600, marginBottom: 8 }}>✅ {q.answer}</div>}
+          {q.tip && <div style={{ background:"#FFF6DC", border:`2px solid ${C.sun}`, borderRadius:14, padding:"10px 12px", fontSize:13.5, textAlign:"center", marginBottom:10 }}>💡 {q.tip}</div>}
+          <button onClick={next} className="tap" style={{ width:"100%", background:C.grape, color:"#fff", border:"none", borderRadius:16, padding:"15px", fontSize:18, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 0 ${C.grapeDark}`, fontFamily:"inherit" }}>{qi + 1 < total ? "Next →" : "Finish ⭐"}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function End({ isSession, title, correct, total, streak, onAgain, onHome, onProgress }) {
+  const perfect = correct === total, good = correct >= Math.ceil(total * 0.6);
+  const msg = perfect ? "Perfect! 🌟" : good ? "Great job! 👏" : "Good try! 💪";
+  return (
+    <div style={{ textAlign: "center", animation: "popIn .25s ease" }}>
+      <div style={{ background:"#fff", borderRadius:26, padding:"26px 18px", boxShadow:"0 5px 0 rgba(43,33,80,.12)", marginTop:10 }}>
+        <StarSvg size={70} face bounce />
+        <div style={{ fontWeight: 700, fontSize: 24, marginTop: 8 }}>{msg}</div>
+        <div style={{ fontSize: 16, color: "#6a6390", marginTop: 4 }}>{isSession ? "Session complete" : title}</div>
+        <div className="flex items-center justify-center" style={{ gap: 6, marginTop: 14, flexWrap: "wrap" }}>{Array.from({ length: total }).map((_, i) => (<StarSvg key={i} size={20} color={i < correct ? C.sun : "#e3dff3"} />))}</div>
+        <div style={{ fontWeight: 700, fontSize: 20, marginTop: 10 }}>{correct} / {total} ⭐</div>
+        {isSession && streak > 0 && <div style={{ marginTop: 10, fontWeight: 800, fontSize: 17, color: C.coral }}>🔥 {streak}-day streak!</div>}
+      </div>
+      <div className="flex" style={{ gap: 10, marginTop: 14 }}>
+        <button onClick={onAgain} className="tap" style={{ flex:1, background:C.grape, color:"#fff", border:"none", borderRadius:16, padding:"15px", fontSize:17, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 0 ${C.grapeDark}`, fontFamily:"inherit" }}>{isSession ? "New session" : "Play again"}</button>
+        <button onClick={onHome} className="tap" style={{ flex:1, background:"#fff", color:C.ink, border:"none", borderRadius:16, padding:"15px", fontSize:17, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 0 rgba(43,33,80,.14)", fontFamily:"inherit" }}>Home</button>
+      </div>
+      <button onClick={onProgress} className="tap" style={{ marginTop:10, background:"transparent", border:"none", color:C.grape, fontWeight:700, cursor:"pointer", fontSize:14 }}>📊 See progress</button>
+    </div>
+  );
+}
+
+function Progress({ log, meta, totalStars, onClear, onHome }) {
+  const dayLabel = (iso) => { const d = iso.slice(0, 10); if (d === todayStr()) return "Today"; if (d === yestStr()) return "Yesterday"; return d; };
+  const timeLabel = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
+
+  // agrupar por día conservando orden (log ya viene newest-first)
+  const groups = []; const idx = {};
+  log.forEach((r) => { const d = r.t.slice(0, 10); if (!(d in idx)) { idx[d] = groups.length; groups.push({ d, items: [] }); } groups[idx[d]].items.push(r); });
+
+  const scoreColor = (c, t) => (c === t ? C.grass : c >= Math.ceil(t * 0.6) ? C.sun : C.coral);
+
+  return (
+    <div style={{ animation: "popIn .2s ease" }}>
+      <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+        <button onClick={onHome} className="tap" style={{ border:"none", background:"#fff", borderRadius:999, width:40, height:40, cursor:"pointer", fontSize:18, boxShadow:"0 3px 0 rgba(43,33,80,.12)" }}>←</button>
+        <div style={{ fontWeight: 800, fontSize: 19 }}>Progress</div>
+        <div style={{ width: 40 }} />
+      </div>
+
+      <div className="flex" style={{ gap: 10, marginBottom: 14 }}>
+        <div style={{ flex:1, background:"#fff", borderRadius:16, padding:"12px", textAlign:"center", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}><div style={{ fontSize:22, fontWeight:800, color:C.coral }}>🔥 {meta.streak || 0}</div><div style={{ fontSize:11.5, color:"#6a6390" }}>day streak</div></div>
+        <div style={{ flex:1, background:"#fff", borderRadius:16, padding:"12px", textAlign:"center", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}><div style={{ fontSize:22, fontWeight:800, color:C.grape }}>{meta.sessions || 0}</div><div style={{ fontSize:11.5, color:"#6a6390" }}>sessions</div></div>
+        <div style={{ flex:1, background:"#fff", borderRadius:16, padding:"12px", textAlign:"center", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}><div style={{ fontSize:22, fontWeight:800, color:C.sun }}>★ {totalStars}</div><div style={{ fontSize:11.5, color:"#6a6390" }}>best stars</div></div>
+      </div>
+
+      {log.length === 0 && (<div style={{ background:"#fff", borderRadius:18, padding:"24px 16px", textAlign:"center", color:"#7a7398", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}>No activity yet.<br/>Do a session and it will show here! ⭐</div>)}
+
+      {groups.map((g) => (
+        <div key={g.d} style={{ marginBottom: 16 }}>
+          <div style={{ fontWeight: 800, fontSize: 14, color: "#6a6390", margin: "0 2px 8px" }}>{dayLabel(g.t || g.items[0].t)}</div>
+          {g.items.map((r, i) => (
+            <div key={i} style={{ background:"#fff", borderRadius:16, padding:"12px 14px", marginBottom:8, boxShadow:"0 3px 0 rgba(43,33,80,.1)" }}>
+              <div className="flex items-center justify-between">
+                <div style={{ fontWeight: 700, fontSize: 14.5 }}>{r.kind}</div>
+                <div className="flex items-center" style={{ gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "#9a93c0" }}>{timeLabel(r.t)}</span>
+                  <span style={{ fontWeight: 800, fontSize: 14, color: scoreColor(r.correct, r.total) }}>{r.correct}/{r.total}</span>
+                </div>
+              </div>
+              {r.wrong && r.wrong.length > 0 ? (
+                <div style={{ marginTop: 8, borderTop: "1px dashed #ede9f8", paddingTop: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: C.coral, marginBottom: 4 }}>Mistakes:</div>
+                  {r.wrong.map((w, j) => (
+                    <div key={j} style={{ fontSize: 12.5, color: "#4a4470", marginBottom: 3 }}>
+                      <b>{w.topic}</b> — {w.q} <span style={{ color: C.grass }}>→ {w.a}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (<div style={{ marginTop: 6, fontSize: 12.5, color: C.grass, fontWeight: 700 }}>✓ No mistakes!</div>)}
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {log.length > 0 && (
+        <button onClick={() => { if (window.confirm("Clear all history?")) onClear(); }} className="tap" style={{ width:"100%", background:"#fff", color:C.coral, border:"2px solid #f3d7d7", borderRadius:14, padding:"12px", fontWeight:700, cursor:"pointer", fontFamily:"inherit", fontSize:14 }}>Clear history</button>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
