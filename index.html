@@ -35,15 +35,17 @@ if(!window.__store){
 
 
 /*
-  Star English v6 — práctica para Majo (Oxford "Bright", Starter–Unit 3)
+  Star English v7 — práctica para Majo (Oxford "Bright", Starter–Unit 3)
   · Inglés didáctico · ilustraciones · sin pistas.
   · Today's session + Progress (historial) + racha.
-  · NUEVO: ejercicios generados al vuelo (misma lógica, contenido distinto cada vez).
-  · NUEVO: sin distractores que sólo cambian por el apóstrofo (isnt/isn't).
+  · Ejercicios generados al vuelo (misma lógica, contenido distinto cada vez).
+  · Sin distractores que sólo cambian por el apóstrofo (isnt/isn't).
+  · NUEVO: siempre se puede iniciar una sesión nueva; cada sesión queda
+    numerada en el historial (Session 1, Session 2…) y no se borra ninguna.
   · Mantiene las claves de guardado "v5" para conservar el progreso ya hecho.
 */
 
-const VERSION = "v6";
+const VERSION = "v7";
 const C = { ink:"#2B2150", grape:"#6B4EE6", grapeDark:"#5438c9", sun:"#FFC233", grass:"#34BE6B", coral:"#FF6B6B", sky1:"#C9D8FF", sky2:"#EBD9FF" };
 
 const A = 'stroke="#2B2150" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
@@ -276,11 +278,12 @@ function App() {
   })(); }, []);
   const saveBest = async (n) => { setBest(n); try { await window.storage.set("majo-best-v5", JSON.stringify(n)); } catch (e) {} };
   const saveMeta = async (n) => { setMeta(n); try { await window.storage.set("majo-meta-v5", JSON.stringify(n)); } catch (e) {} };
-  const addLog = async (rec) => { const n = [rec, ...log].slice(0, 80); setLog(n); try { await window.storage.set("majo-log-v5", JSON.stringify(n)); } catch (e) {} };
+  const addLog = async (rec) => { const n = [rec, ...log].slice(0, 400); setLog(n); try { await window.storage.set("majo-log-v5", JSON.stringify(n)); } catch (e) {} };
   const clearLog = async () => { setLog([]); try { await window.storage.set("majo-log-v5", JSON.stringify([])); } catch (e) {} };
 
   const totalStars = Object.values(best).reduce((a, b) => a + b, 0);
   const doneToday = meta.lastDay === todayStr();
+  const todayCount = log.filter((r) => r.kind === "Today's session" && r.t.slice(0, 10) === todayStr()).length;
 
   const startMission = (id) => { setQs(genMission(id)); setTitle(MNAME[id]); setIsSession(false); setMissionId(id); setRetrying(false); setScreen("play"); };
   const startSession = () => { setQs(buildSession(10)); setTitle("Today's session"); setIsSession(true); setMissionId(null); setRetrying(false); setScreen("play"); };
@@ -323,7 +326,7 @@ function App() {
           <div className="flex items-center" style={{ gap: 6, background:"#fff", borderRadius:999, padding:"6px 12px", boxShadow:"0 3px 0 rgba(43,33,80,.15)", fontWeight:700 }}><StarSvg size={20} /> <span style={{ fontSize: 16 }}>{totalStars}</span></div>
         </div>
 
-        {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
+        {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} todayCount={todayCount} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
         {screen === "play" && <Play qs={qs} title={title} isSession={isSession} onFinish={onFinish} onHome={() => setScreen("home")} />}
         {screen === "end" && <End isSession={isSession} title={title} correct={finalCorrect} total={finalTotal} streak={meta.streak} onAgain={() => (isSession ? startSession() : startMission(missionId))} onHome={() => setScreen("home")} onProgress={() => setScreen("progress")} />}
         {screen === "progress" && <Progress log={log} meta={meta} totalStars={totalStars} onClear={clearLog} onHome={() => setScreen("home")} />}
@@ -334,7 +337,7 @@ function App() {
   );
 }
 
-function Home({ best, meta, doneToday, onStart, onSession, onProgress }) {
+function Home({ best, meta, doneToday, todayCount, onStart, onSession, onProgress }) {
   return (
     <div style={{ animation: "popIn .25s ease" }}>
       <div className="flex items-center" style={{ gap: 12, background:"#fff", borderRadius:22, padding:"14px 16px", marginBottom:12, boxShadow:"0 4px 0 rgba(43,33,80,.12)" }}>
@@ -347,10 +350,10 @@ function Home({ best, meta, doneToday, onStart, onSession, onProgress }) {
       </div>
 
       <button onClick={onSession} className="tap opt" style={{ width:"100%", textAlign:"left", border:"none", borderRadius:22, padding:"16px 18px", cursor:"pointer", color:"#fff", background:`linear-gradient(135deg, ${C.grape}, #8a6bff)`, boxShadow:`0 5px 0 ${C.grapeDark}`, marginBottom:16, display:"flex", alignItems:"center", gap:14 }}>
-        <div style={{ fontSize: 34 }}>{doneToday ? "✅" : "⭐"}</div>
+        <div style={{ fontSize: 34 }}>{doneToday ? "🌟" : "⭐"}</div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>Today's session</div>
-          <div style={{ fontSize: 13, opacity: .92 }}>{doneToday ? "Done today — play again?" : "10 new questions · 3–5 min"}</div>
+          <div style={{ fontWeight: 800, fontSize: 18 }}>{doneToday ? "New session" : "Today's session"}</div>
+          <div style={{ fontSize: 13, opacity: .92 }}>{doneToday ? `${todayCount} done today — start another! · 10 new questions` : "10 new questions · 3–5 min"}</div>
         </div>
         <div style={{ fontSize: 22 }}>▶</div>
       </button>
@@ -490,13 +493,18 @@ function Progress({ log, meta, totalStars, onClear, onHome }) {
 
       {log.length === 0 && (<div style={{ background:"#fff", borderRadius:18, padding:"24px 16px", textAlign:"center", color:"#7a7398", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}>No activity yet.<br/>Do a session and it will show here! ⭐</div>)}
 
-      {groups.map((g) => (
+      {groups.map((g) => {
+        const sessTotal = g.items.filter((r) => r.kind === "Today's session").length;
+        let sSeen = 0;
+        return (
         <div key={g.d} style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 800, fontSize: 14, color: "#6a6390", margin: "0 2px 8px" }}>{dayLabel(g.items[0].t)}</div>
-          {g.items.map((r, i) => (
+          {g.items.map((r, i) => {
+            const label = r.kind === "Today's session" ? `⭐ Session ${sessTotal - (sSeen++)}` : r.kind;
+            return (
             <div key={i} style={{ background:"#fff", borderRadius:16, padding:"12px 14px", marginBottom:8, boxShadow:"0 3px 0 rgba(43,33,80,.1)" }}>
               <div className="flex items-center justify-between">
-                <div style={{ fontWeight: 700, fontSize: 14.5 }}>{r.kind}</div>
+                <div style={{ fontWeight: 700, fontSize: 14.5 }}>{label}</div>
                 <div className="flex items-center" style={{ gap: 8 }}>
                   <span style={{ fontSize: 12, color: "#9a93c0" }}>{timeLabel(r.t)}</span>
                   <span style={{ fontWeight: 800, fontSize: 14, color: scoreColor(r.correct, r.total) }}>{r.correct}/{r.total}</span>
@@ -509,9 +517,9 @@ function Progress({ log, meta, totalStars, onClear, onHome }) {
                 </div>
               ) : (<div style={{ marginTop: 6, fontSize: 12.5, color: C.grass, fontWeight: 700 }}>✓ No mistakes!</div>)}
             </div>
-          ))}
+          );})}
         </div>
-      ))}
+      );})}
 
       {log.length > 0 && (<button onClick={() => { if (window.confirm("Clear all history?")) onClear(); }} className="tap" style={{ width:"100%", background:"#fff", color:C.coral, border:"2px solid #f3d7d7", borderRadius:14, padding:"12px", fontWeight:700, cursor:"pointer", fontFamily:"inherit", fontSize:14 }}>Clear history</button>)}
     </div>
