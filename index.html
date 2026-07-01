@@ -35,13 +35,15 @@ if(!window.__store){
 
 
 /*
-  Star English v5 — práctica para Majo (Oxford "Bright", Starter–Unit 3)
+  Star English v6 — práctica para Majo (Oxford "Bright", Starter–Unit 3)
   · Inglés didáctico · ilustraciones · sin pistas.
-  · Today's session (sesión mixta + repaso de errores + racha).
-  · NUEVO: Progress — historial de cada práctica (fecha, puntaje y errores).
+  · Today's session + Progress (historial) + racha.
+  · NUEVO: ejercicios generados al vuelo (misma lógica, contenido distinto cada vez).
+  · NUEVO: sin distractores que sólo cambian por el apóstrofo (isnt/isn't).
+  · Mantiene las claves de guardado "v5" para conservar el progreso ya hecho.
 */
 
-const VERSION = "v5";
+const VERSION = "v6";
 const C = { ink:"#2B2150", grape:"#6B4EE6", grapeDark:"#5438c9", sun:"#FFC233", grass:"#34BE6B", coral:"#FF6B6B", sky1:"#C9D8FF", sky2:"#EBD9FF" };
 
 const A = 'stroke="#2B2150" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
@@ -79,94 +81,158 @@ function Icon({ name, size = 64 }) {
   return <span style={{ display: "inline-flex", lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 100 100" width="${size}" height="${size}">${ICON[name]}</svg>` }} />;
 }
 
-const MISSIONS = [
-  { id:"thereis", emoji:"🏘️", name:"There is / There are", sub:"one is · many are", questions:[
-    { pics:["tree"], badge:"yes", text:"Is there a park?", options:["Yes, there is.","Yes, there are.","No, there isn't."], answer:"Yes, there is.", tip:"One thing → there is." },
-    { pics:["shop","shop"], badge:"yes", text:"Are there any shops?", options:["Yes, there are.","Yes, there is."], answer:"Yes, there are.", tip:"Many → there are." },
-    { pics:["house"], badge:"no", text:"Is there a school?", options:["No, there isn't.","No, there aren't.","Yes, there is."], answer:"No, there isn't.", tip:"One → there isn't." },
-    { pics:["tree","tree"], badge:"no", text:"Are there any parks?", options:["No, there aren't.","No, there isn't."], answer:"No, there aren't.", tip:"Many → there aren't." },
-    { pics:["car","car"], badge:"yes", text:"Are there any cars?", options:["Yes, there are.","Yes, there is."], answer:"Yes, there are." },
-    { pics:["castle"], badge:"no", text:"Is there a castle?", options:["No, there isn't.","No, there aren't."], answer:"No, there isn't." },
-    { pics:["house"], badge:"no", text:"Is there a hospital?", options:["No, there isnt.","No, there isn't.","No, there aren't."], answer:"No, there isn't.", tip:"isn't has an apostrophe." },
-    { pics:["bus","bus"], badge:"no", text:"Are there any buses?", options:["No, there arent.","No, there aren't.","No, there isn't."], answer:"No, there aren't.", tip:"aren't has an apostrophe." },
-  ]},
-  { id:"ilike", emoji:"💬", name:"I like / I can / I've got", sub:"not 'I'm like'", questions:[
-    { pics:["apple"], text:"I ___ apples.", options:["I'm like","I like"], answer:"I like", tip:"Use I like with another word." },
-    { pics:["facehappy"], text:"I ___ happy.", options:["I like","I'm","I've got"], answer:"I'm", tip:"Use I'm for feelings: I'm happy." },
-    { pics:["swim"], text:"I ___ swim.", options:["I'm can","I can"], answer:"I can" },
-    { pics:["dog"], text:"I ___ a dog.", options:["I'm have","I've got"], answer:"I've got", tip:"I've got = I have." },
-    { text:"I ___ from Argentina.", options:["I like","I'm","I've got"], answer:"I'm", tip:"Use I'm from + place." },
-    { pics:["football"], text:"I ___ football.", options:["I'm like","I like"], answer:"I like" },
-    { pics:["facescared"], text:"I ___ scared.", options:["I'm","I can","I like"], answer:"I'm" },
-    { pics:["bike"], text:"I ___ ride a bike.", options:["I'm can","I can"], answer:"I can" },
-  ]},
-  { id:"thisthese", emoji:"🚂", name:"This is / These are", sub:"one · many + s", questions:[
-    { pics:["train"], text:"___ a train.", options:["This is","These are"], answer:"This is", tip:"One → This is." },
-    { pics:["car","car"], text:"These are my ___.", options:["car","cars"], answer:"cars", tip:"Many → add -s: cars." },
-    { pics:["bus","bus"], text:"These are my ___.", options:["bus","buses"], answer:"buses", tip:"bus → buses." },
-    { pics:["plane"], text:"___ my plane.", options:["This is","These are"], answer:"This is" },
-    { pics:["lorry","lorry"], text:"These are my ___.", options:["lorry","lorries"], answer:"lorries", tip:"lorry → lorries." },
-    { pics:["motorbike"], text:"___ a motorbike.", options:["This is","These are"], answer:"This is" },
-    { pics:["car","car"], text:"___ my cars.", options:["This is","These are"], answer:"These are" },
-  ]},
-  { id:"spell", emoji:"✏️", name:"Spelling Stars", sub:"look and choose", ask:"Which one is correct?", questions:[
-    { pics:["castle"], options:["castel","castle","casle"], answer:"castle" },
-    { pics:["painting"], options:["paiting","painting","paintin"], answer:"painting" },
-    { pics:["flask"], options:["sientist","scientist","scientistc"], answer:"scientist" },
-    { pics:["boy"], options:["broder","brother","bruther"], answer:"brother" },
-    { pics:["necklace"], options:["netcklas","necklace","neclace"], answer:"necklace" },
-    { pics:["dinosaur"], options:["dinosor","dinosaur","dinasaur"], answer:"dinosaur" },
-    { pics:["football"], options:["futbol","football","footbal"], answer:"football" },
-    { pics:["basketball"], options:["basketbal","basketball","basquetbol"], answer:"basketball" },
-    { swatch:"#34BE6B", options:["gren","green","grin"], answer:"green" },
-    { swatch:"#FF8A3D", options:["orage","orange","orenge"], answer:"orange" },
-    { swatch:"#FFC233", options:["yellou","yellow","yelow"], answer:"yellow" },
-    { pics:["apple"], options:["aple","apple","aplee"], answer:"apple" },
-  ]},
-  { id:"yesno", emoji:"🙋", name:"Yes / No answers", sub:"look at the picture", questions:[
-    { pics:["faceangry"], text:"Is she happy?", options:["No, she isn't.","Yes, she is.","No, she isnt."], answer:"No, she isn't.", tip:"Capital letter, comma, and isn't." },
-    { pics:["facehappy"], text:"Is he sad?", options:["No, he isn't.","Yes, he is."], answer:"No, he isn't." },
-    { pics:["facehungry"], text:"Is she hungry?", options:["Yes, she is.","No, she isn't."], answer:"Yes, she is." },
-    { pics:["facescared"], text:"Is he scared?", options:["Yes, he is.","No, he isn't."], answer:"Yes, he is." },
-    { pics:["chefhat"], text:"Is he a cook?", options:["Yes, he is.","No, he isn't."], answer:"Yes, he is." },
-    { pics:["football"], text:"Is she a teacher?", options:["No, she isn't.","Yes, she is."], answer:"No, she isn't.", tip:"She plays football." },
-    { pics:["motorbike"], badge:"yes", text:"Has she got a motorbike?", options:["Yes, she has.","Yes, she is.","Yes, she have."], answer:"Yes, she has.", tip:"Has she got…? → Yes, she has." },
-    { pics:["dog"], badge:"no", text:"Has he got a dog?", options:["No, he hasn't.","No, he isn't."], answer:"No, he hasn't." },
-  ]},
-  { id:"questions", emoji:"❓", name:"Make the question", sub:"word order", ask:"Choose the question.", questions:[
-    { context:"Friend: My name is Sara.", options:["What you name?","What's your name?","What name your?"], answer:"What's your name?" },
-    { context:"Friend: I'm eight.", options:["How old are you?","How old you are?","How you old?"], answer:"How old are you?" },
-    { context:"Friend: I'm from Argentina.", options:["Where you from?","Where are you from?","From where you?"], answer:"Where are you from?" },
-    { context:"Friend: Yes, I do. I like football.", options:["You like football?","Do you like football?","Like you football?"], answer:"Do you like football?" },
-    { context:"Friend: Yes, I have. I've got a dog.", options:["Have you got a dog?","You have a dog?","Got you a dog?"], answer:"Have you got a dog?" },
-    { context:"Friend: It's in March.", options:["When your birthday?","When is your birthday?","When birthday you?"], answer:"When is your birthday?" },
-    { context:"Friend: My favourite team is West Ham.", options:["What your favourite team?","What's your favourite team?","What favourite your team?"], answer:"What's your favourite team?" },
-    { context:"Friend: I'm wearing a t-shirt.", options:["What you wearing?","What are you wearing?","What wearing you?"], answer:"What are you wearing?" },
-  ]},
-  { id:"connect", emoji:"🔗", name:"and / but / or", sub:"joining words", questions:[
-    { text:"I like pizza ___ I don't like fish.", options:["and","but","or"], answer:"but", tip:"A different idea → but." },
-    { text:"I like soup ___ apples.", options:["and","but","or"], answer:"and", tip:"Adding things → and." },
-    { text:"I don't like lettuce ___ fish.", options:["and","but","or"], answer:"or", tip:"After don't like → or." },
-    { text:"I can swim ___ I can't fly.", options:["and","but"], answer:"but" },
-    { text:"I've got a ball ___ I haven't got a bike.", options:["and","but"], answer:"but" },
-    { text:"I like dogs ___ cats.", options:["and","but"], answer:"and" },
-    { text:"Is your birthday in March ___ in May?", options:["and","or"], answer:"or" },
-    { text:"I'm tall ___ I've got curly hair.", options:["and","but"], answer:"and" },
-  ]},
+// ---------- utilidades aleatorias ----------
+const pick = (a) => a[(Math.random() * a.length) | 0];
+const coin = () => Math.random() < 0.5;
+function shuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } return b; }
+const pickBut = (a, notVal) => { let x = pick(a); let g = 0; while (x === notVal && g++ < 20) x = pick(a); return x; };
+const sig = (q) => (q.text || q.context || "") + "|" + q.answer + "|" + (q.pics ? q.pics.join(",") : "") + "|" + (q.swatch || "");
+
+// ---------- bancos de contenido ----------
+const SING = [ {w:"park",icon:"tree"}, {w:"castle",icon:"castle"}, {w:"shop",icon:"shop"}, {w:"school",icon:"house"}, {w:"hospital",icon:"house"}, {w:"station",icon:"house"} ];
+const PLUR = [ {w:"shops",icon:"shop"}, {w:"cars",icon:"car"}, {w:"buses",icon:"bus"}, {w:"parks",icon:"tree"}, {w:"houses",icon:"house"}, {w:"trees",icon:"tree"} ];
+const FEEL = [ {w:"happy",icon:"facehappy"}, {w:"sad",icon:"facesad"}, {w:"hungry",icon:"facehungry"}, {w:"scared",icon:"facescared"}, {w:"angry",icon:"faceangry"} ];
+const LIKEABLE = [ {w:"pizza"}, {w:"apples",icon:"apple"}, {w:"football",icon:"football"}, {w:"dogs",icon:"dog"}, {w:"soup"}, {w:"bananas"} ];
+const ACTIONS = [ {w:"swim",icon:"swim"}, {w:"ride a bike",icon:"bike"}, {w:"run"}, {w:"dance"}, {w:"jump"}, {w:"sing"} ];
+const HAVE = [ {w:"a dog",icon:"dog"}, {w:"a bike",icon:"bike"}, {w:"a necklace",icon:"necklace"}, {w:"a ball",icon:"football"} ];
+const PLACES = ["Argentina","Spain","Peru","Egypt"];
+const VEH = [ {s:"car",p:"cars",icon:"car"}, {s:"bus",p:"buses",icon:"bus"}, {s:"train",p:"trains",icon:"train"}, {s:"plane",p:"planes",icon:"plane"}, {s:"lorry",p:"lorries",icon:"lorry"}, {s:"motorbike",p:"motorbikes",icon:"motorbike"}, {s:"bike",p:"bikes",icon:"bike"} ];
+const JOBS = [ {w:"cook",icon:"chefhat"}, {w:"scientist",icon:"flask"}, {w:"football player",icon:"football"} ];
+const MONTHS = ["January","March","May","July","September","December"];
+const NAMES = ["Sara","Mia","Tom","Lily","Ben","Nina"];
+const SPELL = [
+  {w:"castle",icon:"castle",d:["castel","casle"]}, {w:"painting",icon:"painting",d:["paiting","paintin"]},
+  {w:"scientist",icon:"flask",d:["sientist","scientistc"]}, {w:"brother",icon:"boy",d:["broder","bruther"]},
+  {w:"necklace",icon:"necklace",d:["neclace","netcklace"]}, {w:"dinosaur",icon:"dinosaur",d:["dinosor","dinasaur"]},
+  {w:"football",icon:"football",d:["footbal","futbol"]}, {w:"basketball",icon:"basketball",d:["basketbal","basketbol"]},
+  {w:"apple",icon:"apple",d:["aple","appel"]}, {w:"dog",icon:"dog",d:["dogg","dug"]},
+  {w:"bike",icon:"bike",d:["biek","byke"]}, {w:"house",icon:"house",d:["hous","howse"]},
+  {w:"train",icon:"train",d:["tran","trian"]}, {w:"plane",icon:"plane",d:["plaen","plan"]},
+  {w:"green",swatch:"#34BE6B",d:["gren","grean"]}, {w:"orange",swatch:"#FF8A3D",d:["orage","orenge"]}, {w:"yellow",swatch:"#FFC233",d:["yellou","yelow"]},
 ];
 
-const ALL = [];
-MISSIONS.forEach((m) => m.questions.forEach((q) => ALL.push({ ...q, _ask: m.ask, _mission: m.name, _id: m.id })));
-const enriched = (m) => m.questions.map((q) => ({ ...q, _ask: m.ask, _mission: m.name, _id: m.id }));
+// ---------- generadores (una pregunta por llamada) ----------
+function oneThereIs() {
+  if (coin()) { // singular
+    const pl = pick(SING), yes = coin();
+    const answer = yes ? "Yes, there is." : "No, there isn't.";
+    const other = yes ? "Yes, there are." : "No, there aren't.";
+    return { pics:[pl.icon], badge: yes?"yes":"no", text:`Is there a ${pl.w}?`, options: shuffle([answer, other]), answer, tip:"One thing → there is / there isn't." };
+  } else { // plural
+    const pl = pick(PLUR), yes = coin();
+    const answer = yes ? "Yes, there are." : "No, there aren't.";
+    const other = yes ? "Yes, there is." : "No, there isn't.";
+    return { pics:[pl.icon, pl.icon], badge: yes?"yes":"no", text:`Are there any ${pl.w}?`, options: shuffle([answer, other]), answer, tip:"Many things → there are / there aren't." };
+  }
+}
+function oneILike() {
+  const t = (Math.random() * 5) | 0;
+  if (t === 0) { const f = pick(FEEL); return { pics:[f.icon], text:`I ___ ${f.w}.`, options: shuffle(["I'm","I like"]), answer:"I'm", tip:"Use I'm for feelings: I'm happy." }; }
+  if (t === 1) { const x = pick(LIKEABLE); return { pics: x.icon?[x.icon]:undefined, text:`I ___ ${x.w}.`, options: shuffle(["I like","I'm like"]), answer:"I like", tip:"Use I like with a word." }; }
+  if (t === 2) { const a = pick(ACTIONS); return { pics: a.icon?[a.icon]:undefined, text:`I ___ ${a.w}.`, options: shuffle(["I can","I'm can"]), answer:"I can" }; }
+  if (t === 3) { const o = pick(HAVE); return { pics: o.icon?[o.icon]:undefined, text:`I ___ ${o.w}.`, options: shuffle(["I've got","I'm have"]), answer:"I've got", tip:"I've got = I have." }; }
+  const p = pick(PLACES); return { text:`I ___ from ${p}.`, options: shuffle(["I'm","I like"]), answer:"I'm", tip:"Use I'm from + place." };
+}
+function oneThisThese() {
+  const v = pick(VEH), t = (Math.random() * 3) | 0;
+  if (t === 0) return { pics:[v.icon], text:`___ a ${v.s}.`, options: shuffle(["This is","These are"]), answer:"This is", tip:"One → This is." };
+  if (t === 1) return { pics:[v.icon, v.icon], text:`___ my ${v.p}.`, options: shuffle(["This is","These are"]), answer:"These are", tip:"Many → These are." };
+  return { pics:[v.icon, v.icon], text:"These are my ___.", options: shuffle([v.s, v.p]), answer: v.p, tip:"Add -s for many." };
+}
+function oneSpell(word) {
+  const s = word || pick(SPELL);
+  const base = s.swatch ? { swatch: s.swatch } : { pics: [s.icon] };
+  return { ...base, ask:"Which one is correct?", options: shuffle([s.w, s.d[0], s.d[1]]), answer: s.w };
+}
+function oneYesNo() {
+  const pron = coin() ? "she" : "he", t = (Math.random() * 3) | 0;
+  if (t === 2) { // has got
+    const v = pick(VEH), yes = coin();
+    const answer = yes ? `Yes, ${pron} has.` : `No, ${pron} hasn't.`;
+    const opts = yes ? [answer, `Yes, ${pron} is.`, `No, ${pron} hasn't.`] : [answer, `Yes, ${pron} has.`, `No, ${pron} isn't.`];
+    return { pics:[v.icon], badge: yes?"yes":"no", text:`Has ${pron} got a ${v.s}?`, options: shuffle([...new Set(opts)]), answer, tip:"Has … got? → Yes, … has." };
+  }
+  if (t === 1) { // job
+    const j = pick(JOBS), match = coin();
+    const askJob = match ? j.w : pickBut(JOBS, j).w;
+    const yes = askJob === j.w;
+    const answer = yes ? `Yes, ${pron} is.` : `No, ${pron} isn't.`;
+    const opp = yes ? `No, ${pron} isn't.` : `Yes, ${pron} is.`;
+    const otherP = pron === "she" ? "he" : "she";
+    return { pics:[j.icon], text:`Is ${pron} a ${askJob}?`, options: shuffle([answer, opp, `${yes?"Yes":"No"}, ${otherP} ${yes?"is.":"isn't."}`]), answer };
+  }
+  // feeling
+  const f = pick(FEEL), match = coin();
+  const askF = match ? f.w : pickBut(FEEL, f).w;
+  const yes = askF === f.w;
+  const answer = yes ? `Yes, ${pron} is.` : `No, ${pron} isn't.`;
+  const opp = yes ? `No, ${pron} isn't.` : `Yes, ${pron} is.`;
+  const otherP = pron === "she" ? "he" : "she";
+  return { pics:[f.icon], text:`Is ${pron} ${askF}?`, options: shuffle([answer, opp, `${yes?"Yes":"No"}, ${otherP} ${yes?"is.":"isn't."}`]), answer };
+}
+function oneQuestion() {
+  const t = (Math.random() * 7) | 0; let context, correct, d;
+  if (t === 0) { const n = pick(NAMES); context = `Friend: My name is ${n}.`; correct = "What's your name?"; d = ["What you name?","What name your?"]; }
+  else if (t === 1) { const a = pick([7,8,9,10]); context = `Friend: I'm ${a}.`; correct = "How old are you?"; d = ["How old you are?","How you old?"]; }
+  else if (t === 2) { const p = pick(PLACES); context = `Friend: I'm from ${p}.`; correct = "Where are you from?"; d = ["Where you from?","From where you?"]; }
+  else if (t === 3) { const x = pick(["football","pizza","dogs","tennis"]); context = `Friend: Yes, I do. I like ${x}.`; correct = `Do you like ${x}?`; d = [`You like ${x}?`,`Like you ${x}?`]; }
+  else if (t === 4) { const x = pick(["a dog","a bike","a watch"]); context = `Friend: Yes, I have. I've got ${x}.`; correct = `Have you got ${x}?`; d = [`You have ${x}?`,`Got you ${x}?`]; }
+  else if (t === 5) { const m = pick(MONTHS); context = `Friend: It's in ${m}.`; correct = "When is your birthday?"; d = ["When your birthday?","When birthday you?"]; }
+  else { const x = pick(["a t-shirt","a dress","shorts"]); context = `Friend: I'm wearing ${x}.`; correct = "What are you wearing?"; d = ["What you wearing?","What wearing you?"]; }
+  return { context, ask:"Choose the question.", options: shuffle([correct, d[0], d[1]]), answer: correct };
+}
+function oneConnect() {
+  const FD = ["pizza","soup","apples","bananas","chicken","rice"], t = (Math.random() * 6) | 0;
+  if (t === 0) { const a = pick(FD), b = pickBut(FD, a); return { text:`I like ${a} ___ I don't like ${b}.`, options: shuffle(["and","but","or"]), answer:"but", tip:"A different idea → but." }; }
+  if (t === 1) { const a = pick(FD), b = pickBut(FD, a); return { text:`I like ${a} ___ ${b}.`, options: shuffle(["and","but","or"]), answer:"and", tip:"Adding things → and." }; }
+  if (t === 2) { const a = pick(FD), b = pickBut(FD, a); return { text:`I don't like ${a} ___ ${b}.`, options: shuffle(["and","but","or"]), answer:"or", tip:"After don't like → or." }; }
+  if (t === 3) { const a = pick(ACTIONS).w, b = pickBut(ACTIONS.map(x=>x.w), a); return { text:`I can ${a} ___ I can't ${b}.`, options: shuffle(["and","but"]), answer:"but" }; }
+  if (t === 4) { const a = pick(["ball","bike","dog","watch"]); const b = pickBut(["ball","bike","dog","watch"], a); return { text:`I've got a ${a} ___ I haven't got a ${b}.`, options: shuffle(["and","but"]), answer:"but" }; }
+  const m1 = pick(MONTHS), m2 = pickBut(MONTHS, m1); return { text:`Is your birthday in ${m1} ___ in ${m2}?`, options: shuffle(["and","or"]), answer:"or" };
+}
+
+const GEN = { thereis: oneThereIs, ilike: oneILike, thisthese: oneThisThese, spell: oneSpell, yesno: oneYesNo, questions: oneQuestion, connect: oneConnect };
+
+const MISSIONS = [
+  { id:"thereis", emoji:"🏘️", name:"There is / There are", sub:"one is · many are" },
+  { id:"ilike", emoji:"💬", name:"I like / I can / I've got", sub:"not 'I'm like'" },
+  { id:"thisthese", emoji:"🚂", name:"This is / These are", sub:"one · many + s" },
+  { id:"spell", emoji:"✏️", name:"Spelling Stars", sub:"look and choose" },
+  { id:"yesno", emoji:"🙋", name:"Yes / No answers", sub:"look at the picture" },
+  { id:"questions", emoji:"❓", name:"Make the question", sub:"word order" },
+  { id:"connect", emoji:"🔗", name:"and / but / or", sub:"joining words" },
+];
+const MNAME = Object.fromEntries(MISSIONS.map((m) => [m.id, m.name]));
+const MLEN = 8;
+
+// genera un set único (sin repetir) para una misión
+function genMission(id, n = MLEN) {
+  const out = [], seen = new Set();
+  if (id === "spell") { // sin repetir palabra
+    const words = shuffle(SPELL).slice(0, Math.min(n, SPELL.length));
+    return words.map((w) => ({ ...oneSpell(w), _id:id, _mission:MNAME[id] }));
+  }
+  let guard = 0;
+  while (out.length < n && guard++ < n * 12) {
+    const q = GEN[id](); const s = sig(q);
+    if (!seen.has(s)) { seen.add(s); out.push({ ...q, _id:id, _mission:MNAME[id] }); }
+  }
+  return out;
+}
 
 const WEIGHTS = { thereis:3, thisthese:3, spell:3, ilike:2, yesno:2, questions:1, connect:1 };
 function buildSession(n = 10) {
-  const pool = [];
-  ALL.forEach((q) => { const w = WEIGHTS[q._id] || 1; for (let i = 0; i < w; i++) pool.push(q); });
-  const chosen = [], used = new Set(); let guard = 0;
-  while (chosen.length < n && guard < 800) { guard++; const q = pool[Math.floor(Math.random() * pool.length)]; if (!used.has(q)) { used.add(q); chosen.push(q); } }
-  return chosen;
+  const bag = []; Object.keys(WEIGHTS).forEach((id) => { for (let i = 0; i < WEIGHTS[id]; i++) bag.push(id); });
+  const out = [], seen = new Set(); let guard = 0;
+  while (out.length < n && guard++ < n * 14) {
+    const id = pick(bag);
+    const q = id === "spell" ? oneSpell() : GEN[id]();
+    const s = sig(q);
+    if (!seen.has(s)) { seen.add(s); out.push({ ...q, _id:id, _mission:MNAME[id] }); }
+  }
+  return out;
 }
+
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const yestStr = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10);
 const descQ = (q) => q.text ? q.text : q.context ? q.context : (q.answer ? "Spelling: " + q.answer : "—");
@@ -216,7 +282,7 @@ function App() {
   const totalStars = Object.values(best).reduce((a, b) => a + b, 0);
   const doneToday = meta.lastDay === todayStr();
 
-  const startMission = (m) => { setQs(enriched(m)); setTitle(m.name); setIsSession(false); setMissionId(m.id); setRetrying(false); setScreen("play"); };
+  const startMission = (id) => { setQs(genMission(id)); setTitle(MNAME[id]); setIsSession(false); setMissionId(id); setRetrying(false); setScreen("play"); };
   const startSession = () => { setQs(buildSession(10)); setTitle("Today's session"); setIsSession(true); setMissionId(null); setRetrying(false); setScreen("play"); };
 
   const closeSession = (c, t, wrongArr) => {
@@ -226,16 +292,10 @@ function App() {
     addLog({ t: new Date().toISOString(), kind: "Today's session", correct: c, total: t, wrong: packWrong(wrongArr) });
     setFinalCorrect(c); setFinalTotal(t); setScreen("end");
   };
-
   const onFinish = (correct, total, wrong) => {
     if (isSession) {
-      if (!retrying) {
-        setFirst({ correct, total, wrong });
-        if (wrong.length > 0) { setRetrying(true); setQs(wrong); setTitle("Try again!"); return; }
-        closeSession(correct, total, []);
-      } else {
-        closeSession(first.correct, first.total, first.wrong);
-      }
+      if (!retrying) { setFirst({ correct, total, wrong }); if (wrong.length > 0) { setRetrying(true); setQs(wrong); setTitle("Try again!"); return; } closeSession(correct, total, []); }
+      else { closeSession(first.correct, first.total, first.wrong); }
     } else {
       const prev = best[missionId] || 0; if (correct > prev) saveBest({ ...best, [missionId]: correct });
       addLog({ t: new Date().toISOString(), kind: title, correct, total, wrong: packWrong(wrong) });
@@ -265,7 +325,7 @@ function App() {
 
         {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
         {screen === "play" && <Play qs={qs} title={title} isSession={isSession} onFinish={onFinish} onHome={() => setScreen("home")} />}
-        {screen === "end" && <End isSession={isSession} title={title} correct={finalCorrect} total={finalTotal} streak={meta.streak} onAgain={() => (isSession ? startSession() : startMission(MISSIONS.find((m) => m.id === missionId)))} onHome={() => setScreen("home")} onProgress={() => setScreen("progress")} />}
+        {screen === "end" && <End isSession={isSession} title={title} correct={finalCorrect} total={finalTotal} streak={meta.streak} onAgain={() => (isSession ? startSession() : startMission(missionId))} onHome={() => setScreen("home")} onProgress={() => setScreen("progress")} />}
         {screen === "progress" && <Progress log={log} meta={meta} totalStars={totalStars} onClear={clearLog} onHome={() => setScreen("home")} />}
 
         <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: "#9a93c0" }}>Star English · {VERSION}</div>
@@ -290,7 +350,7 @@ function Home({ best, meta, doneToday, onStart, onSession, onProgress }) {
         <div style={{ fontSize: 34 }}>{doneToday ? "✅" : "⭐"}</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 800, fontSize: 18 }}>Today's session</div>
-          <div style={{ fontSize: 13, opacity: .92 }}>{doneToday ? "Done today — play again?" : "10 mixed questions · 3–5 min"}</div>
+          <div style={{ fontSize: 13, opacity: .92 }}>{doneToday ? "Done today — play again?" : "10 new questions · 3–5 min"}</div>
         </div>
         <div style={{ fontSize: 22 }}>▶</div>
       </button>
@@ -298,13 +358,13 @@ function Home({ best, meta, doneToday, onStart, onSession, onProgress }) {
       <div style={{ fontSize: 13, fontWeight: 700, color: "#6a6390", margin: "0 2px 8px" }}>Or practise one thing:</div>
       <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         {MISSIONS.map((m) => {
-          const b = best[m.id] || 0, total = m.questions.length;
+          const b = best[m.id] || 0;
           return (
-            <button key={m.id} onClick={() => onStart(m)} className="tap opt" style={{ textAlign:"left", background:"#fff", border:"none", borderRadius:20, padding:14, cursor:"pointer", boxShadow:"0 4px 0 rgba(43,33,80,.12)", display:"flex", flexDirection:"column", gap:6, minHeight:120 }}>
+            <button key={m.id} onClick={() => onStart(m.id)} className="tap opt" style={{ textAlign:"left", background:"#fff", border:"none", borderRadius:20, padding:14, cursor:"pointer", boxShadow:"0 4px 0 rgba(43,33,80,.12)", display:"flex", flexDirection:"column", gap:6, minHeight:120 }}>
               <div style={{ fontSize: 28 }}>{m.emoji}</div>
               <div style={{ fontWeight: 700, fontSize: 14, lineHeight: 1.1 }}>{m.name}</div>
               <div style={{ fontSize: 11.5, color: "#7a7398", flex: 1 }}>{m.sub}</div>
-              <div className="flex items-center" style={{ gap: 4, fontSize: 12, fontWeight: 700, color: b ? C.grape : "#b9b4cf" }}><StarSvg size={15} color={b ? C.sun : "#dcd8ee"} /> {b}/{total}</div>
+              <div className="flex items-center" style={{ gap: 4, fontSize: 12, fontWeight: 700, color: b ? C.grape : "#b9b4cf" }}><StarSvg size={15} color={b ? C.sun : "#dcd8ee"} /> best {b}/{MLEN}</div>
             </button>
           );
         })}
@@ -399,7 +459,7 @@ function End({ isSession, title, correct, total, streak, onAgain, onHome, onProg
         {isSession && streak > 0 && <div style={{ marginTop: 10, fontWeight: 800, fontSize: 17, color: C.coral }}>🔥 {streak}-day streak!</div>}
       </div>
       <div className="flex" style={{ gap: 10, marginTop: 14 }}>
-        <button onClick={onAgain} className="tap" style={{ flex:1, background:C.grape, color:"#fff", border:"none", borderRadius:16, padding:"15px", fontSize:17, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 0 ${C.grapeDark}`, fontFamily:"inherit" }}>{isSession ? "New session" : "Play again"}</button>
+        <button onClick={onAgain} className="tap" style={{ flex:1, background:C.grape, color:"#fff", border:"none", borderRadius:16, padding:"15px", fontSize:17, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 0 ${C.grapeDark}`, fontFamily:"inherit" }}>{isSession ? "New session" : "New questions ↻"}</button>
         <button onClick={onHome} className="tap" style={{ flex:1, background:"#fff", color:C.ink, border:"none", borderRadius:16, padding:"15px", fontSize:17, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 0 rgba(43,33,80,.14)", fontFamily:"inherit" }}>Home</button>
       </div>
       <button onClick={onProgress} className="tap" style={{ marginTop:10, background:"transparent", border:"none", color:C.grape, fontWeight:700, cursor:"pointer", fontSize:14 }}>📊 See progress</button>
@@ -410,11 +470,8 @@ function End({ isSession, title, correct, total, streak, onAgain, onHome, onProg
 function Progress({ log, meta, totalStars, onClear, onHome }) {
   const dayLabel = (iso) => { const d = iso.slice(0, 10); if (d === todayStr()) return "Today"; if (d === yestStr()) return "Yesterday"; return d; };
   const timeLabel = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
-
-  // agrupar por día conservando orden (log ya viene newest-first)
   const groups = []; const idx = {};
   log.forEach((r) => { const d = r.t.slice(0, 10); if (!(d in idx)) { idx[d] = groups.length; groups.push({ d, items: [] }); } groups[idx[d]].items.push(r); });
-
   const scoreColor = (c, t) => (c === t ? C.grass : c >= Math.ceil(t * 0.6) ? C.sun : C.coral);
 
   return (
@@ -435,7 +492,7 @@ function Progress({ log, meta, totalStars, onClear, onHome }) {
 
       {groups.map((g) => (
         <div key={g.d} style={{ marginBottom: 16 }}>
-          <div style={{ fontWeight: 800, fontSize: 14, color: "#6a6390", margin: "0 2px 8px" }}>{dayLabel(g.t || g.items[0].t)}</div>
+          <div style={{ fontWeight: 800, fontSize: 14, color: "#6a6390", margin: "0 2px 8px" }}>{dayLabel(g.items[0].t)}</div>
           {g.items.map((r, i) => (
             <div key={i} style={{ background:"#fff", borderRadius:16, padding:"12px 14px", marginBottom:8, boxShadow:"0 3px 0 rgba(43,33,80,.1)" }}>
               <div className="flex items-center justify-between">
@@ -448,11 +505,7 @@ function Progress({ log, meta, totalStars, onClear, onHome }) {
               {r.wrong && r.wrong.length > 0 ? (
                 <div style={{ marginTop: 8, borderTop: "1px dashed #ede9f8", paddingTop: 8 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: C.coral, marginBottom: 4 }}>Mistakes:</div>
-                  {r.wrong.map((w, j) => (
-                    <div key={j} style={{ fontSize: 12.5, color: "#4a4470", marginBottom: 3 }}>
-                      <b>{w.topic}</b> — {w.q} <span style={{ color: C.grass }}>→ {w.a}</span>
-                    </div>
-                  ))}
+                  {r.wrong.map((w, j) => (<div key={j} style={{ fontSize: 12.5, color: "#4a4470", marginBottom: 3 }}><b>{w.topic}</b> — {w.q} <span style={{ color: C.grass }}>→ {w.a}</span></div>))}
                 </div>
               ) : (<div style={{ marginTop: 6, fontSize: 12.5, color: C.grass, fontWeight: 700 }}>✓ No mistakes!</div>)}
             </div>
@@ -460,9 +513,7 @@ function Progress({ log, meta, totalStars, onClear, onHome }) {
         </div>
       ))}
 
-      {log.length > 0 && (
-        <button onClick={() => { if (window.confirm("Clear all history?")) onClear(); }} className="tap" style={{ width:"100%", background:"#fff", color:C.coral, border:"2px solid #f3d7d7", borderRadius:14, padding:"12px", fontWeight:700, cursor:"pointer", fontFamily:"inherit", fontSize:14 }}>Clear history</button>
-      )}
+      {log.length > 0 && (<button onClick={() => { if (window.confirm("Clear all history?")) onClear(); }} className="tap" style={{ width:"100%", background:"#fff", color:C.coral, border:"2px solid #f3d7d7", borderRadius:14, padding:"12px", fontWeight:700, cursor:"pointer", fontFamily:"inherit", fontSize:14 }}>Clear history</button>)}
     </div>
   );
 }
