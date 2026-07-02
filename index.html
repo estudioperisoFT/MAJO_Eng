@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Star English">
 <meta name="mobile-web-app-capable" content="yes">
@@ -12,10 +12,10 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>
-  html,body{margin:0;padding:0;background:#C9D8FF;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:#C9D8FF;-webkit-tap-highlight-color:transparent;overflow-x:hidden;}
   .flex{display:flex}.grid{display:grid}.inline-flex{display:inline-flex}
   .items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}
-  .min-h-screen{min-height:100vh}.w-full{width:100%}
+  .min-h-screen{min-height:100vh;min-height:100dvh}.w-full{width:100%}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
@@ -45,10 +45,13 @@ if(!window.__store){
     (con distractores tipo "I'm" que hay que dejar afuera) y ESCRIBIR la palabra.
   · NUEVO: Today's session sube de dificultad sola (elige → ordena → escribe).
   · NUEVO: selector Easy/Hard para las misiones sueltas.
+  · v9: la sesión en curso se guarda y se retoma si se cierra la app;
+    opciones más difíciles (3-4 por pregunta, con trampas sutiles);
+    ajustes para pantalla de teléfono (safe-area, 100dvh).
   · Mantiene las claves de guardado "v5" para conservar el progreso ya hecho.
 */
 
-const VERSION = "v8";
+const VERSION = "v9";
 const C = { ink:"#2B2150", grape:"#6B4EE6", grapeDark:"#5438c9", sun:"#FFC233", grass:"#34BE6B", coral:"#FF6B6B", sky1:"#C9D8FF", sky2:"#EBD9FF" };
 
 const A = 'stroke="#2B2150" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
@@ -165,8 +168,7 @@ function oneThereIs(mode) {
   const pics = singular ? [pl.icon] : [pl.icon, pl.icon];
   const tip = singular ? "One thing → there is / there isn't." : "Many things → there are / there aren't.";
   if (mode === "order") return orderQ({ sentence: answer, decoys: [wrongVerb], pics, badge: yes?"yes":"no", context: qtext, tip });
-  const other = singular ? (yes ? "Yes, there are." : "No, there aren't.") : (yes ? "Yes, there is." : "No, there isn't.");
-  return { pics, badge: yes?"yes":"no", text: qtext, options: shuffle([answer, other]), answer, tip };
+  return { pics, badge: yes?"yes":"no", text: qtext, options: shuffle(["Yes, there is.","Yes, there are.","No, there isn't.","No, there aren't."]), answer, tip };
 }
 function oneILike(mode) {
   if (mode === "order") {
@@ -177,11 +179,11 @@ function oneILike(mode) {
     const f = pick(FEEL); return orderQ({ sentence:`I'm ${f.w}.`, decoys:["like"], pics:[f.icon], tip:"Feelings → I'm happy." });
   }
   const t = (Math.random() * 5) | 0;
-  if (t === 0) { const f = pick(FEEL); return { pics:[f.icon], text:`I ___ ${f.w}.`, options: shuffle(["I'm","I like"]), answer:"I'm", tip:"Use I'm for feelings: I'm happy." }; }
-  if (t === 1) { const x = pick(LIKEABLE); return { pics: x.icon?[x.icon]:undefined, text:`I ___ ${x.w}.`, options: shuffle(["I like","I'm like"]), answer:"I like", tip:"Use I like with a word." }; }
-  if (t === 2) { const a = pick(ACTIONS); return { pics: a.icon?[a.icon]:undefined, text:`I ___ ${a.w}.`, options: shuffle(["I can","I'm can"]), answer:"I can" }; }
-  if (t === 3) { const o = pick(HAVE); return { pics: o.icon?[o.icon]:undefined, text:`I ___ ${o.w}.`, options: shuffle(["I've got","I'm have"]), answer:"I've got", tip:"I've got = I have." }; }
-  const p = pick(PLACES); return { text:`I ___ from ${p}.`, options: shuffle(["I'm","I like"]), answer:"I'm", tip:"Use I'm from + place." };
+  if (t === 0) { const f = pick(FEEL); return { pics:[f.icon], text:`I ___ ${f.w}.`, options: shuffle(["I'm","I like","I can"]), answer:"I'm", tip:"Use I'm for feelings: I'm happy." }; }
+  if (t === 1) { const x = pick(LIKEABLE); return { pics: x.icon?[x.icon]:undefined, text:`I ___ ${x.w}.`, options: shuffle(["I like","I'm like","I'm"]), answer:"I like", tip:"Use I like with a word." }; }
+  if (t === 2) { const a = pick(ACTIONS); return { pics: a.icon?[a.icon]:undefined, text:`I ___ ${a.w}.`, options: shuffle(["I can","I'm can","I like"]), answer:"I can" }; }
+  if (t === 3) { const o = pick(HAVE); return { pics: o.icon?[o.icon]:undefined, text:`I ___ ${o.w}.`, options: shuffle(["I've got","I'm have","I'm got"]), answer:"I've got", tip:"I've got = I have." }; }
+  const p = pick(PLACES); return { text:`I ___ from ${p}.`, options: shuffle(["I'm","I like","I can"]), answer:"I'm", tip:"Use I'm from + place." };
 }
 function oneThisThese(mode) {
   const v = pick(VEH);
@@ -190,9 +192,9 @@ function oneThisThese(mode) {
     return orderQ({ sentence:`These are my ${v.p}.`, decoys:["This","is"], pics:[v.icon, v.icon], tip:"Many → These are." });
   }
   const t = (Math.random() * 3) | 0;
-  if (t === 0) return { pics:[v.icon], text:`___ a ${v.s}.`, options: shuffle(["This is","These are"]), answer:"This is", tip:"One → This is." };
-  if (t === 1) return { pics:[v.icon, v.icon], text:`___ my ${v.p}.`, options: shuffle(["This is","These are"]), answer:"These are", tip:"Many → These are." };
-  return { pics:[v.icon, v.icon], text:"These are my ___.", options: shuffle([v.s, v.p]), answer: v.p, tip:"Add -s for many." };
+  if (t === 0) return { pics:[v.icon], text:`___ a ${v.s}.`, options: shuffle(["This is","These are","This are"]), answer:"This is", tip:"One → This is." };
+  if (t === 1) return { pics:[v.icon, v.icon], text:`___ my ${v.p}.`, options: shuffle(["These are","This is","These is"]), answer:"These are", tip:"Many → These are." };
+  return { pics:[v.icon, v.icon], text:"These are my ___.", options: shuffle([...new Set([v.p, v.s, v.s + "s"])]), answer: v.p, tip:"Add -s for many." };
 }
 function oneSpell(mode, word) {
   const s = word || pick(SPELL);
@@ -251,9 +253,9 @@ function oneConnect(mode) {
   if (t === 0) { const a = pick(FD), b = pickBut(FD, a); return { text:`I like ${a} ___ I don't like ${b}.`, options: shuffle(["and","but","or"]), answer:"but", tip:"A different idea → but." }; }
   if (t === 1) { const a = pick(FD), b = pickBut(FD, a); return { text:`I like ${a} ___ ${b}.`, options: shuffle(["and","but","or"]), answer:"and", tip:"Adding things → and." }; }
   if (t === 2) { const a = pick(FD), b = pickBut(FD, a); return { text:`I don't like ${a} ___ ${b}.`, options: shuffle(["and","but","or"]), answer:"or", tip:"After don't like → or." }; }
-  if (t === 3) { const a = pick(ACTIONS).w, b = pickBut(ACTIONS.map(x=>x.w), a); return { text:`I can ${a} ___ I can't ${b}.`, options: shuffle(["and","but"]), answer:"but" }; }
-  if (t === 4) { const a = pick(["ball","bike","dog","watch"]); const b = pickBut(["ball","bike","dog","watch"], a); return { text:`I've got a ${a} ___ I haven't got a ${b}.`, options: shuffle(["and","but"]), answer:"but" }; }
-  const m1 = pick(MONTHS), m2 = pickBut(MONTHS, m1); return { text:`Is your birthday in ${m1} ___ in ${m2}?`, options: shuffle(["and","or"]), answer:"or" };
+  if (t === 3) { const a = pick(ACTIONS).w, b = pickBut(ACTIONS.map(x=>x.w), a); return { text:`I can ${a} ___ I can't ${b}.`, options: shuffle(["and","but","or"]), answer:"but" }; }
+  if (t === 4) { const a = pick(["ball","bike","dog","watch"]); const b = pickBut(["ball","bike","dog","watch"], a); return { text:`I've got a ${a} ___ I haven't got a ${b}.`, options: shuffle(["and","but","or"]), answer:"but" }; }
+  const m1 = pick(MONTHS), m2 = pickBut(MONTHS, m1); return { text:`Is your birthday in ${m1} ___ in ${m2}?`, options: shuffle(["and","or","but"]), answer:"or" };
 }
 function onePrep(mode) {
   if (mode === "order" || (mode !== "spell" && Math.random() < 0.35)) { // frases "Where's the X?" (incluye opposite)
@@ -261,12 +263,12 @@ function onePrep(mode) {
     const fact = `The ${a.w} is ${pr} the ${b.w}.`;
     const answer = `It's ${pr} the ${b.w}.`;
     if (mode === "order") return orderQ({ sentence: answer, context: fact, ask:`Where's the ${a.w}?`, pics:[a.icon], tip:"It's + place word." });
-    const others = shuffle(PREP_TXT.filter((p) => p !== pr)).slice(0, 2).map((p) => `It's ${p} the ${b.w}.`);
+    const others = PREP_TXT.filter((p) => p !== pr).map((p) => `It's ${p} the ${b.w}.`);
     return { context: fact, text:`Where's the ${a.w}?`, options: shuffle([answer, ...others]), answer, tip:"Read the first sentence again!" };
   }
   const pr = pick(PREPS);
   if (mode === "spell") return { type:"spell", prepScene: pr, text:"The ball is ___ the box.", ask:"Look and write the word.", answer: pr };
-  const others = shuffle(PREPS.filter((p) => p !== pr)).slice(0, 2);
+  const others = shuffle(PREPS.filter((p) => p !== pr)).slice(0, 3);
   return { prepScene: pr, text:"The ball is ___ the box.", options: shuffle([pr, ...others]), answer: pr };
 }
 function oneWearJobs(mode) {
@@ -341,10 +343,10 @@ function oneReading(mode) {
     if (mode === "order") return orderQ({ sentence: answer, decoys:[she ? "he" : "she"], context, ask:`Is ${name} ${askAge}?`, tip:"Read the text again!" });
     return { context, text:`Is ${name} ${askAge}?`, options: shuffle([answer, match ? `No, ${pron} isn't.` : `Yes, ${pron} is.`, `${match?"Yes":"No"}, ${she?"he":"she"} ${match?"is.":"isn't."}`]), answer, tip:"Read the text again!" };
   }
-  if (t === 1) return { context, text:`${Pron} can ___.`, options: shuffle([canDo, cantDo, pickBut(ACTIONS.map((x) => x.w), canDo)].filter((v, i, arr) => arr.indexOf(v) === i)), answer: canDo };
+  if (t === 1) { const extra = pick(ACTIONS.map((x) => x.w).filter((w) => w !== canDo && w !== cantDo)); return { context, text:`${Pron} can ___.`, options: shuffle([canDo, cantDo, extra]), answer: canDo, tip:"Read the text again!" }; }
   if (t === 2) { const match = coin(); const askItem = match ? item : pickBut(HAVE, item);
     const answer = match ? `Yes, ${pron} has.` : `No, ${pron} hasn't.`;
-    return { context, text:`Has ${pron} got ${askItem.w}?`, options: shuffle([answer, match ? `No, ${pron} hasn't.` : `Yes, ${pron} has.`]), answer };
+    return { context, text:`Has ${pron} got ${askItem.w}?`, options: shuffle([answer, match ? `No, ${pron} hasn't.` : `Yes, ${pron} has.`, `${match?"Yes":"No"}, ${she?"he":"she"} ${match?"has.":"hasn't."}`]), answer };
   }
   if (t === 3) return { context, text:`${Pron} lives in a ___.`, options: shuffle(["big house","small house","flat"]), answer: house };
   return { context, text:`How old is ${name}?`, options: shuffle([`${Pron}'s ${age}.`, `${Pron}'s ${age + 1}.`, `${Pron}'s ${age - 1}.`]), answer:`${Pron}'s ${age}.` };
@@ -409,6 +411,11 @@ const packWrong = (arr) => arr.map((q) => ({ q: descQ(q), a: q.answer, topic: q.
 
 const CHEERS = ["Great!", "Yes!", "Well done!", "Brilliant!", "Star!", "Super!"];
 
+// partida en curso: se guarda para retomar si se cierra la app a mitad de sesión
+const GAME_KEY = "majo-game";
+const saveGame = (snap) => { try { localStorage.setItem(GAME_KEY, JSON.stringify(snap)); } catch (e) {} };
+const clearGame = () => { try { localStorage.removeItem(GAME_KEY); } catch (e) {} };
+
 function StarSvg({ size = 28, face = false, color = C.sun, bounce = false }) {
   return (
     <span className="inline-flex items-center justify-center" style={{ animation: bounce ? "lumiBounce 0.6s ease" : "none", lineHeight: 1 }}>
@@ -438,12 +445,15 @@ function App() {
   const [first, setFirst] = useState({ correct: 0, total: 0, wrong: [] });
   const [finalCorrect, setFinalCorrect] = useState(0);
   const [finalTotal, setFinalTotal] = useState(0);
+  const [resumePlay, setResumePlay] = useState(null);
 
   useEffect(() => { (async () => {
     try { const r = await window.storage.get("majo-best-v5"); if (r && r.value) setBest(JSON.parse(r.value)); } catch (e) {}
     try { const r = await window.storage.get("majo-meta-v5"); if (r && r.value) setMeta(JSON.parse(r.value)); } catch (e) {}
     try { const r = await window.storage.get("majo-log-v5"); if (r && r.value) setLog(JSON.parse(r.value)); } catch (e) {}
     try { const r = await window.storage.get("majo-level"); if (r && r.value === "hard") setLevelState("hard"); } catch (e) {}
+    try { const g = localStorage.getItem(GAME_KEY); if (g) { const r = JSON.parse(g);
+      if (r && r.qs && r.qs.length) { setQs(r.qs); setTitle(r.title); setIsSession(!!r.isSession); setMissionId(r.missionId); setRetrying(!!r.retrying); setFirst(r.first || { correct:0, total:0, wrong:[] }); setResumePlay(r.play || null); setScreen("play"); } } } catch (e) {}
   })(); }, []);
   const saveBest = async (n) => { setBest(n); try { await window.storage.set("majo-best-v5", JSON.stringify(n)); } catch (e) {} };
   const saveMeta = async (n) => { setMeta(n); try { await window.storage.set("majo-meta-v5", JSON.stringify(n)); } catch (e) {} };
@@ -455,10 +465,13 @@ function App() {
   const doneToday = meta.lastDay === todayStr();
   const todayCount = log.filter((r) => r.kind === "Today's session" && r.t.slice(0, 10) === todayStr()).length;
 
-  const startMission = (id) => { setQs(genMission(id, MLEN, level)); setTitle(MNAME[id]); setIsSession(false); setMissionId(id); setRetrying(false); setScreen("play"); };
-  const startSession = () => { setQs(buildSession(10)); setTitle("Today's session"); setIsSession(true); setMissionId(null); setRetrying(false); setScreen("play"); };
+  const startMission = (id) => { const qs2 = genMission(id, MLEN, level); setQs(qs2); setTitle(MNAME[id]); setIsSession(false); setMissionId(id); setRetrying(false); setResumePlay(null);
+    saveGame({ qs: qs2, title: MNAME[id], isSession: false, missionId: id, retrying: false, first: { correct:0, total:0, wrong:[] }, play: { qi:0, correct:0, wrong:[] } }); setScreen("play"); };
+  const startSession = () => { const qs2 = buildSession(10); setQs(qs2); setTitle("Today's session"); setIsSession(true); setMissionId(null); setRetrying(false); setResumePlay(null);
+    saveGame({ qs: qs2, title: "Today's session", isSession: true, missionId: null, retrying: false, first: { correct:0, total:0, wrong:[] }, play: { qi:0, correct:0, wrong:[] } }); setScreen("play"); };
 
   const closeSession = (c, t, wrongArr) => {
+    clearGame();
     const last = meta.lastDay; let streak = meta.streak || 0;
     if (last !== todayStr()) streak = (last === yestStr()) ? streak + 1 : 1;
     saveMeta({ streak, lastDay: todayStr(), sessions: (meta.sessions || 0) + 1 });
@@ -467,9 +480,12 @@ function App() {
   };
   const onFinish = (correct, total, wrong) => {
     if (isSession) {
-      if (!retrying) { setFirst({ correct, total, wrong }); if (wrong.length > 0) { setRetrying(true); setQs(wrong); setTitle("Try again!"); return; } closeSession(correct, total, []); }
+      if (!retrying) { setFirst({ correct, total, wrong }); if (wrong.length > 0) { setRetrying(true); setQs(wrong); setTitle("Try again!"); setResumePlay(null);
+          saveGame({ qs: wrong, title: "Try again!", isSession: true, missionId: null, retrying: true, first: { correct, total, wrong }, play: { qi:0, correct:0, wrong:[] } }); return; }
+        closeSession(correct, total, []); }
       else { closeSession(first.correct, first.total, first.wrong); }
     } else {
+      clearGame();
       const prev = best[missionId] || 0; if (correct > prev) saveBest({ ...best, [missionId]: correct });
       addLog({ t: new Date().toISOString(), kind: title, correct, total, wrong: packWrong(wrong) });
       setFinalCorrect(correct); setFinalTotal(total); setScreen("end");
@@ -478,7 +494,7 @@ function App() {
 
   const bg = `radial-gradient(120% 90% at 50% 0%, ${C.sky2} 0%, ${C.sky1} 60%, #B9C8FF 100%)`;
   return (
-    <div className="min-h-screen w-full flex justify-center" style={{ background: bg, fontFamily: "'Fredoka','Baloo 2','Trebuchet MS',system-ui,sans-serif", color: C.ink, padding: "16px" }}>
+    <div className="min-h-screen w-full flex justify-center" style={{ background: bg, fontFamily: "'Fredoka','Baloo 2','Trebuchet MS',system-ui,sans-serif", color: C.ink, padding: "calc(12px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom))" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap');
         @keyframes lumiBounce{0%{transform:translateY(0) scale(1)}30%{transform:translateY(-10px) scale(1.15)}60%{transform:translateY(0) scale(.96)}100%{transform:translateY(0) scale(1)}}
@@ -497,7 +513,7 @@ function App() {
         </div>
 
         {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} todayCount={todayCount} level={level} setLevel={setLevel} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
-        {screen === "play" && <Play qs={qs} title={title} isSession={isSession} onFinish={onFinish} onHome={() => setScreen("home")} />}
+        {screen === "play" && <Play qs={qs} title={title} isSession={isSession} initial={resumePlay} onSave={(p) => saveGame({ qs, title, isSession, missionId, retrying, first, play: p })} onFinish={onFinish} onHome={() => { clearGame(); setResumePlay(null); setScreen("home"); }} />}
         {screen === "end" && <End isSession={isSession} title={title} correct={finalCorrect} total={finalTotal} streak={meta.streak} onAgain={() => (isSession ? startSession() : startMission(missionId))} onHome={() => setScreen("home")} onProgress={() => setScreen("progress")} />}
         {screen === "progress" && <Progress log={log} meta={meta} totalStars={totalStars} onClear={clearLog} onHome={() => setScreen("home")} />}
 
@@ -553,16 +569,17 @@ function Home({ best, meta, doneToday, todayCount, level, setLevel, onStart, onS
   );
 }
 
-function Play({ qs, title, isSession, onFinish, onHome }) {
-  const [qi, setQi] = useState(0);
+function Play({ qs, title, isSession, initial, onSave, onFinish, onHome }) {
+  const [qi, setQi] = useState(initial ? initial.qi : 0);
   const [picked, setPicked] = useState(null);
-  const [correct, setCorrect] = useState(0);
-  const [wrong, setWrong] = useState([]);
+  const [correct, setCorrect] = useState(initial ? initial.correct : 0);
+  const [wrong, setWrong] = useState(initial && initial.wrong ? initial.wrong : []);
   const [cheer, setCheer] = useState("");
   const [pop, setPop] = useState(false);
   const [placed, setPlaced] = useState([]);
   const [typed, setTyped] = useState("");
-  useEffect(() => { setQi(0); setPicked(null); setCorrect(0); setWrong([]); setCheer(""); setPlaced([]); setTyped(""); }, [qs]);
+  const skipReset = React.useRef(!!initial);
+  useEffect(() => { if (skipReset.current) { skipReset.current = false; return; } setQi(0); setPicked(null); setCorrect(0); setWrong([]); setCheer(""); setPlaced([]); setTyped(""); }, [qs]);
 
   const q = qs[qi]; if (!q) return null;
   const total = qs.length;
@@ -584,7 +601,7 @@ function Play({ qs, title, isSession, onFinish, onHome }) {
     if (np.length === orderTokens.length) finish(np.map((ix) => q.words[ix]).join(" "));
   };
   const removeWord = (pos) => { if (picked !== null) return; setPlaced(placed.filter((_, j) => j !== pos)); };
-  const next = () => { if (qi + 1 < total) { setQi(qi + 1); setPicked(null); setCheer(""); setPlaced([]); setTyped(""); } else { onFinish(correct, total, wrong); } };
+  const next = () => { if (qi + 1 < total) { if (onSave) onSave({ qi: qi + 1, correct, wrong }); setQi(qi + 1); setPicked(null); setCheer(""); setPlaced([]); setTyped(""); } else { onFinish(correct, total, wrong); } };
 
   const chipBase = { border:"none", borderRadius:14, padding:"10px 14px", fontSize:17, fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
 
