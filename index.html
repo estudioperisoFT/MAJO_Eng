@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
 <style>
+  *,*::before,*::after{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#C9D8FF;-webkit-tap-highlight-color:transparent;overflow-x:hidden;}
   .flex{display:flex}.grid{display:grid}.inline-flex{display:inline-flex}
   .items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}
@@ -55,7 +56,7 @@ if(!window.__store){
   · Mantiene las claves de guardado "v5" para conservar el progreso ya hecho.
 */
 
-const VERSION = "v10";
+const VERSION = "v10.1";
 const C = { ink:"#2B2150", grape:"#6B4EE6", grapeDark:"#5438c9", sun:"#FFC233", grass:"#34BE6B", coral:"#FF6B6B", sky1:"#C9D8FF", sky2:"#EBD9FF" };
 
 const A = 'stroke="#2B2150" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
