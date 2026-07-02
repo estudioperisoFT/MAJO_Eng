@@ -48,10 +48,14 @@ if(!window.__store){
   · v9: la sesión en curso se guarda y se retoma si se cierra la app;
     opciones más difíciles (3-4 por pregunta, con trampas sutiles);
     ajustes para pantalla de teléfono (safe-area, 100dvh).
+  · v10: prepositions con MAPA (la respuesta ya no está literal en la pregunta);
+    edades en palabras en los textos y en números en las opciones;
+    Progress con resumen semanal y "Practise these" (temas con más errores);
+    las sesiones evitan repetir preguntas de sesiones recientes.
   · Mantiene las claves de guardado "v5" para conservar el progreso ya hecho.
 */
 
-const VERSION = "v9";
+const VERSION = "v10";
 const C = { ink:"#2B2150", grape:"#6B4EE6", grapeDark:"#5438c9", sun:"#FFC233", grass:"#34BE6B", coral:"#FF6B6B", sky1:"#C9D8FF", sky2:"#EBD9FF" };
 
 const A = 'stroke="#2B2150" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
@@ -113,6 +117,21 @@ function PrepScene({ prep, size = 110 }) {
   const inner = PREPSVG[prep]; if (!inner) return null;
   return <span style={{ display:"inline-flex", lineHeight:0 }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><path d="M8 84 L92 84" stroke="#cfd8f5" stroke-width="3" stroke-linecap="round"/>${inner}</svg>` }} />;
 }
+function MapScene({ places }) {
+  const cell = (p, i) => (
+    <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:0, width:"33%" }}>
+      <Icon name={p.icon} size={44} />
+      <span style={{ fontSize:10.5, fontWeight:700, color:"#5a5482" }}>{p.w}</span>
+    </div>
+  );
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display:"flex", justifyContent:"space-between" }}>{places.slice(0, 3).map(cell)}</div>
+      <div style={{ height:12, margin:"6px 2px", borderTop:"3px solid #cfd8f5", borderBottom:"3px solid #cfd8f5", display:"flex", alignItems:"center", justifyContent:"center" }}><span style={{ width:"90%", borderTop:"2px dashed #cfd8f5" }} /></div>
+      <div style={{ display:"flex", justifyContent:"space-between" }}>{places.slice(3).map(cell)}</div>
+    </div>
+  );
+}
 
 // ---------- utilidades aleatorias ----------
 const pick = (a) => a[(Math.random() * a.length) | 0];
@@ -157,6 +176,7 @@ const PREP_TXT = ["opposite","next to","behind","in front of"];
 const BREAKFAST = ["milk and toast","juice and toast","milk and eggs","tea and bread"];
 const TRANSPORT = [ {s:"I come to school by bus.",icon:"bus",bad:"I'm come to school by bus."}, {s:"I come to school by car.",icon:"car",bad:"I'm come to school by car."}, {s:"I come to school by bike.",icon:"bike",bad:"I come to school in bike."}, {s:"I walk to school.",bad:"I'm walk to school."} ];
 const RD_SHE = ["Sara","Mia","Lily","Nina"], RD_HE = ["Tom","Ben","Leo","Sam"];
+const NUMW = { 7:"seven", 8:"eight", 9:"nine", 10:"ten", 11:"eleven", 12:"twelve" };
 
 // ---------- generadores (una pregunta por llamada; mode = mc | order | spell) ----------
 function oneThereIs(mode) {
@@ -257,17 +277,27 @@ function oneConnect(mode) {
   if (t === 4) { const a = pick(["ball","bike","dog","watch"]); const b = pickBut(["ball","bike","dog","watch"], a); return { text:`I've got a ${a} ___ I haven't got a ${b}.`, options: shuffle(["and","but","or"]), answer:"but" }; }
   const m1 = pick(MONTHS), m2 = pickBut(MONTHS, m1); return { text:`Is your birthday in ${m1} ___ in ${m2}?`, options: shuffle(["and","or","but"]), answer:"or" };
 }
+function onePrepMap(mode) { // mapa con calle: hay que MIRAR el mapa, la respuesta no está escrita
+  const six = shuffle(CITY).slice(0, 6);
+  const name = (i) => six[i].w;
+  const truths = [];
+  truths.push({ t:1, s:`It's between the ${name(0)} and the ${name(2)}.` });
+  truths.push({ t:4, s:`It's between the ${name(3)} and the ${name(5)}.` });
+  [[0,1],[1,0],[1,2],[2,1],[3,4],[4,3],[4,5],[5,4]].forEach(([a,b]) => truths.push({ t:a, s:`It's next to the ${name(b)}.` }));
+  [[0,3],[3,0],[1,4],[4,1],[2,5],[5,2]].forEach(([a,b]) => truths.push({ t:a, s:`It's opposite the ${name(b)}.` }));
+  const r = pick(truths);
+  const trueSet = new Set(truths.filter((x) => x.t === r.t).map((x) => x.s));
+  if (mode === "order") return { ...orderQ({ sentence: r.s, ask:`Where's the ${name(r.t)}? Look at the map.`, tip:"Opposite = across the street." }), mapScene: six };
+  const cands = [];
+  for (let b = 0; b < 6; b++) { if (b === r.t) continue; cands.push(`It's next to the ${name(b)}.`); cands.push(`It's opposite the ${name(b)}.`); }
+  const wrongs = shuffle(cands.filter((s) => !trueSet.has(s))).slice(0, 3);
+  return { mapScene: six, text:`Where's the ${name(r.t)}?`, ask:"Look at the map.", options: shuffle([r.s, ...wrongs]), answer: r.s, tip:"Opposite = across the street." };
+}
 function onePrep(mode) {
-  if (mode === "order" || (mode !== "spell" && Math.random() < 0.35)) { // frases "Where's the X?" (incluye opposite)
-    const a = pick(CITY), b = pickBut(CITY, a); const pr = pick(PREP_TXT);
-    const fact = `The ${a.w} is ${pr} the ${b.w}.`;
-    const answer = `It's ${pr} the ${b.w}.`;
-    if (mode === "order") return orderQ({ sentence: answer, context: fact, ask:`Where's the ${a.w}?`, pics:[a.icon], tip:"It's + place word." });
-    const others = PREP_TXT.filter((p) => p !== pr).map((p) => `It's ${p} the ${b.w}.`);
-    return { context: fact, text:`Where's the ${a.w}?`, options: shuffle([answer, ...others]), answer, tip:"Read the first sentence again!" };
-  }
+  if (mode !== "spell" && coin()) return onePrepMap(mode);
   const pr = pick(PREPS);
   if (mode === "spell") return { type:"spell", prepScene: pr, text:"The ball is ___ the box.", ask:"Look and write the word.", answer: pr };
+  if (mode === "order") return { ...orderQ({ sentence:`The ball is ${pr} the box.`, decoys:[pickBut(PREPS, pr)], ask:"Where's the ball?" }), prepScene: pr };
   const others = shuffle(PREPS.filter((p) => p !== pr)).slice(0, 3);
   return { prepScene: pr, text:"The ball is ___ the box.", options: shuffle([pr, ...others]), answer: pr };
 }
@@ -284,12 +314,12 @@ function oneWearJobs(mode) {
     if (mode === "order") return orderQ({ sentence:`${Pron} a ${j.w}.`, decoys:[she ? "Her" : "His"], context:`What's ${pos} job?`, pics:[j.icon], tip:`${Pron} = ${she?"She":"He"} is.` });
     return { pics:[j.icon], text:`What's ${pos} job?`, options: shuffle([`${Pron} a ${j.w}.`, `${she?"She":"He"} a ${j.w}.`, `${she?"Her":"His"} a ${j.w}.`]), answer:`${Pron} a ${j.w}.`, tip:`${Pron} = ${she?"She":"He"} is.` };
   }
-  if (t === 2) { // how old is he/she
+  if (t === 2) { // how old is he/she (edad en palabras en el texto, en números en las opciones)
     const she = coin(); const name = pick(she ? RD_SHE : RD_HE); const Pron = she ? "She's" : "He's"; const pron = she ? "she" : "he";
     const age = pick([8,9,10,11]);
-    if (mode === "order") return orderQ({ sentence:`${Pron} ${age} years old.`, decoys:["have"], context:`This is ${name}. ${Pron} ${age}.`, ask:`How old is ${pron}?` });
+    if (mode === "order") return orderQ({ sentence:`${Pron} ${age} years old.`, decoys:["have"], context:`This is ${name}. ${Pron} ${NUMW[age]} years old.`, ask:`How old is ${pron}?` });
     const wrongAge = age + (coin() ? 1 : -1);
-    return { context:`This is ${name}. ${Pron} ${age}.`, text:`How old is ${pron}?`, options: shuffle([`${Pron} ${age}.`, `${Pron} ${wrongAge}.`, `${she?"She":"He"} have ${age}.`]), answer:`${Pron} ${age}.` };
+    return { context:`This is ${name}. ${Pron} ${NUMW[age]} years old.`, text:`How old is ${pron}?`, options: shuffle([`${Pron} ${age}.`, `${Pron} ${wrongAge}.`, `${she?"She":"He"} have ${age}.`]), answer:`${Pron} ${age}.` };
   }
   // It's his/her + cosa (error real del cuaderno: "his is a watch")
   const objs = [ {w:"watch",icon:"watch"}, {w:"necklace",icon:"necklace"}, {w:"ball",icon:"football"}, {w:"bike",icon:"bike"}, {w:"dinosaur",icon:"dinosaur"} ];
@@ -335,9 +365,9 @@ function oneReading(mode) {
   const like = pick(LIKEABLE).w, dislike = pickBut(LIKEABLE.map((x) => x.w), like);
   const canDo = pick(ACTIONS).w, cantDo = pickBut(ACTIONS.map((x) => x.w), canDo);
   const item = pick(HAVE);
-  const context = `Hello! I'm ${name}. I'm ${age}. I live in a ${house}. I like ${like} but I don't like ${dislike}. I can ${canDo} but I can't ${cantDo}. I've got ${item.w}.`;
+  const context = `Hello! I'm ${name}. I'm ${NUMW[age]} years old. I live in a ${house}. I like ${like} but I don't like ${dislike}. I can ${canDo} but I can't ${cantDo}. I've got ${item.w}.`;
   const t = mode === "order" ? 0 : (Math.random() * 5) | 0;
-  if (t === 0) { // Is Name X? yes/no
+  if (t === 0) { // Is Name X? yes/no (edad en número en la pregunta, en palabras en el texto)
     const match = coin(); const askAge = match ? age : age + 1;
     const answer = match ? `Yes, ${pron} is.` : `No, ${pron} isn't.`;
     if (mode === "order") return orderQ({ sentence: answer, decoys:[she ? "he" : "she"], context, ask:`Is ${name} ${askAge}?`, tip:"Read the text again!" });
@@ -390,17 +420,25 @@ function genMission(id, n = MLEN, level = "easy") {
 
 const WEIGHTS = { thereis:2, thisthese:2, spell:2, ilike:2, yesno:2, questions:1, connect:1, prep:3, reading:2, wearjobs:2, aboutyou:2, routine:1 };
 const SESSION_MODES = ["mc","mc","mc","mc","order","order","order","hard","hard","hard"];
+// memoria de preguntas recientes: las sesiones nuevas evitan repetir las de días anteriores
+const RECENT_KEY = "majo-recent-sigs";
+const loadRecent = () => { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); } catch (e) { return []; } };
+const saveRecent = (arr) => { try { localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(-220))); } catch (e) {} };
 function buildSession(n = 10) {
   const bag = []; Object.keys(WEIGHTS).forEach((id) => { for (let i = 0; i < WEIGHTS[id]; i++) bag.push(id); });
+  const recentArr = loadRecent(), recent = new Set(recentArr);
   const out = [], seen = new Set(); let guard = 0;
-  while (out.length < n && guard++ < n * 14) {
+  while (out.length < n && guard++ < n * 22) {
     const id = pick(bag);
     let mode = SESSION_MODES[out.length] || "mc";
     if (mode === "hard") mode = SPELLABLE[id] ? "spell" : "order";
     const q = GEN[id](mode);
     const s = sig(q);
-    if (!seen.has(s)) { seen.add(s); out.push({ ...q, _id:id, _mission:MNAME[id] }); }
+    if (seen.has(s)) continue;
+    if (recent.has(s) && guard < n * 16) continue; // primero intenta preguntas nunca vistas
+    seen.add(s); out.push({ ...q, _id:id, _mission:MNAME[id] });
   }
+  saveRecent([...recentArr, ...out.map(sig)]);
   return out;
 }
 
@@ -470,24 +508,24 @@ function App() {
   const startSession = () => { const qs2 = buildSession(10); setQs(qs2); setTitle("Today's session"); setIsSession(true); setMissionId(null); setRetrying(false); setResumePlay(null);
     saveGame({ qs: qs2, title: "Today's session", isSession: true, missionId: null, retrying: false, first: { correct:0, total:0, wrong:[] }, play: { qi:0, correct:0, wrong:[] } }); setScreen("play"); };
 
-  const closeSession = (c, t, wrongArr) => {
+  const closeSession = (c, t, wrongArr, results) => {
     clearGame();
     const last = meta.lastDay; let streak = meta.streak || 0;
     if (last !== todayStr()) streak = (last === yestStr()) ? streak + 1 : 1;
     saveMeta({ streak, lastDay: todayStr(), sessions: (meta.sessions || 0) + 1 });
-    addLog({ t: new Date().toISOString(), kind: "Today's session", correct: c, total: t, wrong: packWrong(wrongArr) });
+    addLog({ t: new Date().toISOString(), kind: "Today's session", correct: c, total: t, wrong: packWrong(wrongArr), results: results || [] });
     setFinalCorrect(c); setFinalTotal(t); setScreen("end");
   };
-  const onFinish = (correct, total, wrong) => {
+  const onFinish = (correct, total, wrong, results) => {
     if (isSession) {
-      if (!retrying) { setFirst({ correct, total, wrong }); if (wrong.length > 0) { setRetrying(true); setQs(wrong); setTitle("Try again!"); setResumePlay(null);
-          saveGame({ qs: wrong, title: "Try again!", isSession: true, missionId: null, retrying: true, first: { correct, total, wrong }, play: { qi:0, correct:0, wrong:[] } }); return; }
-        closeSession(correct, total, []); }
-      else { closeSession(first.correct, first.total, first.wrong); }
+      if (!retrying) { setFirst({ correct, total, wrong, results }); if (wrong.length > 0) { setRetrying(true); setQs(wrong); setTitle("Try again!"); setResumePlay(null);
+          saveGame({ qs: wrong, title: "Try again!", isSession: true, missionId: null, retrying: true, first: { correct, total, wrong, results }, play: { qi:0, correct:0, wrong:[], results:[] } }); return; }
+        closeSession(correct, total, [], results); }
+      else { closeSession(first.correct, first.total, first.wrong, first.results); }
     } else {
       clearGame();
       const prev = best[missionId] || 0; if (correct > prev) saveBest({ ...best, [missionId]: correct });
-      addLog({ t: new Date().toISOString(), kind: title, correct, total, wrong: packWrong(wrong) });
+      addLog({ t: new Date().toISOString(), kind: title, correct, total, wrong: packWrong(wrong), results: results || [] });
       setFinalCorrect(correct); setFinalTotal(total); setScreen("end");
     }
   };
@@ -515,7 +553,7 @@ function App() {
         {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} todayCount={todayCount} level={level} setLevel={setLevel} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
         {screen === "play" && <Play qs={qs} title={title} isSession={isSession} initial={resumePlay} onSave={(p) => saveGame({ qs, title, isSession, missionId, retrying, first, play: p })} onFinish={onFinish} onHome={() => { clearGame(); setResumePlay(null); setScreen("home"); }} />}
         {screen === "end" && <End isSession={isSession} title={title} correct={finalCorrect} total={finalTotal} streak={meta.streak} onAgain={() => (isSession ? startSession() : startMission(missionId))} onHome={() => setScreen("home")} onProgress={() => setScreen("progress")} />}
-        {screen === "progress" && <Progress log={log} meta={meta} totalStars={totalStars} onClear={clearLog} onHome={() => setScreen("home")} />}
+        {screen === "progress" && <Progress log={log} meta={meta} totalStars={totalStars} onClear={clearLog} onStart={startMission} onHome={() => setScreen("home")} />}
 
         <div style={{ textAlign: "center", marginTop: 14, fontSize: 11, color: "#9a93c0" }}>Star English · {VERSION}</div>
       </div>
@@ -574,12 +612,13 @@ function Play({ qs, title, isSession, initial, onSave, onFinish, onHome }) {
   const [picked, setPicked] = useState(null);
   const [correct, setCorrect] = useState(initial ? initial.correct : 0);
   const [wrong, setWrong] = useState(initial && initial.wrong ? initial.wrong : []);
+  const [results, setResults] = useState(initial && initial.results ? initial.results : []);
   const [cheer, setCheer] = useState("");
   const [pop, setPop] = useState(false);
   const [placed, setPlaced] = useState([]);
   const [typed, setTyped] = useState("");
   const skipReset = React.useRef(!!initial);
-  useEffect(() => { if (skipReset.current) { skipReset.current = false; return; } setQi(0); setPicked(null); setCorrect(0); setWrong([]); setCheer(""); setPlaced([]); setTyped(""); }, [qs]);
+  useEffect(() => { if (skipReset.current) { skipReset.current = false; return; } setQi(0); setPicked(null); setCorrect(0); setWrong([]); setResults([]); setCheer(""); setPlaced([]); setTyped(""); }, [qs]);
 
   const q = qs[qi]; if (!q) return null;
   const total = qs.length;
@@ -591,7 +630,9 @@ function Play({ qs, title, isSession, initial, onSave, onFinish, onHome }) {
   const finish = (val) => {
     if (picked !== null) return;
     setPicked(val);
-    if (isCorrect(q, val)) { setCorrect((c) => c + 1); setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)]); setPop(true); setTimeout(() => setPop(false), 650); }
+    const ok = isCorrect(q, val);
+    setResults((r) => [...r, { t: q._id, ok: ok ? 1 : 0 }]);
+    if (ok) { setCorrect((c) => c + 1); setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)]); setPop(true); setTimeout(() => setPop(false), 650); }
     else { setWrong((w) => [...w, q]); setCheer("Almost! Look →"); }
   };
   const addWord = (i) => {
@@ -601,7 +642,7 @@ function Play({ qs, title, isSession, initial, onSave, onFinish, onHome }) {
     if (np.length === orderTokens.length) finish(np.map((ix) => q.words[ix]).join(" "));
   };
   const removeWord = (pos) => { if (picked !== null) return; setPlaced(placed.filter((_, j) => j !== pos)); };
-  const next = () => { if (qi + 1 < total) { if (onSave) onSave({ qi: qi + 1, correct, wrong }); setQi(qi + 1); setPicked(null); setCheer(""); setPlaced([]); setTyped(""); } else { onFinish(correct, total, wrong); } };
+  const next = () => { if (qi + 1 < total) { if (onSave) onSave({ qi: qi + 1, correct, wrong, results }); setQi(qi + 1); setPicked(null); setCheer(""); setPlaced([]); setTyped(""); } else { onFinish(correct, total, wrong, results); } };
 
   const chipBase = { border:"none", borderRadius:14, padding:"10px 14px", fontSize:17, fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
 
@@ -626,6 +667,7 @@ function Play({ qs, title, isSession, initial, onSave, onFinish, onHome }) {
       <div style={{ background:"#fff", borderRadius:24, padding:18, boxShadow:"0 5px 0 rgba(43,33,80,.12)", animation: isWrong ? "shake .4s ease" : "none", marginBottom:14 }}>
         {q.pics && (<div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:8 }}><span style={{ position:"relative", display:"inline-flex", gap:6 }}>{q.pics.map((n, i) => <Icon key={i} name={n} size={66} />)}{q.badge && <Badge kind={q.badge} />}</span></div>)}
         {q.prepScene && (<div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><span style={{ position:"relative", display:"inline-flex" }}><PrepScene prep={q.prepScene} />{q.badge && <Badge kind={q.badge} />}</span></div>)}
+        {q.mapScene && <MapScene places={q.mapScene} />}
         {q.swatch && (<div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><span style={{ width:56, height:56, borderRadius:"50%", background:q.swatch, border:"3px solid #2B2150" }} /></div>)}
         {q.context && <div style={{ fontSize:16, textAlign:"center", color:"#5a5482", marginBottom:6, lineHeight:1.45 }}>{q.context}</div>}
         {ask && <div style={{ fontSize:14.5, color:"#6a6390", textAlign:"center", marginBottom: q.text ? 4 : 0 }}>{ask}</div>}
@@ -698,12 +740,22 @@ function End({ isSession, title, correct, total, streak, onAgain, onHome, onProg
   );
 }
 
-function Progress({ log, meta, totalStars, onClear, onHome }) {
+function Progress({ log, meta, totalStars, onClear, onStart, onHome }) {
   const dayLabel = (iso) => { const d = iso.slice(0, 10); if (d === todayStr()) return "Today"; if (d === yestStr()) return "Yesterday"; return d; };
   const timeLabel = (iso) => { try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
   const groups = []; const idx = {};
   log.forEach((r) => { const d = r.t.slice(0, 10); if (!(d in idx)) { idx[d] = groups.length; groups.push({ d, items: [] }); } groups[idx[d]].items.push(r); });
   const scoreColor = (c, t) => (c === t ? C.grass : c >= Math.ceil(t * 0.6) ? C.sun : C.coral);
+
+  // resumen semanal + temas con más errores (últimos 15 registros)
+  const weekAgo = Date.now() - 7 * 86400000;
+  const week = log.filter((r) => { try { return new Date(r.t).getTime() > weekAgo; } catch (e) { return false; } });
+  const weekSessions = week.filter((r) => r.kind === "Today's session").length;
+  const weekAvg = week.length ? Math.round(100 * week.reduce((a, r) => a + (r.total ? r.correct / r.total : 0), 0) / week.length) : 0;
+  const MID = Object.fromEntries(MISSIONS.map((m) => [m.name, m.id]));
+  const mist = {};
+  log.slice(0, 15).forEach((r) => (r.wrong || []).forEach((w) => { if (w.topic) mist[w.topic] = (mist[w.topic] || 0) + 1; }));
+  const focus = Object.entries(mist).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
   return (
     <div style={{ animation: "popIn .2s ease" }}>
@@ -718,6 +770,19 @@ function Progress({ log, meta, totalStars, onClear, onHome }) {
         <div style={{ flex:1, background:"#fff", borderRadius:16, padding:"12px", textAlign:"center", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}><div style={{ fontSize:22, fontWeight:800, color:C.grape }}>{meta.sessions || 0}</div><div style={{ fontSize:11.5, color:"#6a6390" }}>sessions</div></div>
         <div style={{ flex:1, background:"#fff", borderRadius:16, padding:"12px", textAlign:"center", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}><div style={{ fontSize:22, fontWeight:800, color:C.sun }}>★ {totalStars}</div><div style={{ fontSize:11.5, color:"#6a6390" }}>best stars</div></div>
       </div>
+
+      {week.length > 0 && (<div style={{ textAlign:"center", fontSize:13, color:"#6a6390", marginBottom:12, fontWeight:700 }}>This week: {weekSessions} session{weekSessions === 1 ? "" : "s"} · {weekAvg}% correct</div>)}
+
+      {focus.length > 0 && (
+        <div style={{ background:"#fff", borderRadius:18, padding:"12px 14px", marginBottom:14, boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}>
+          <div style={{ fontWeight:800, fontSize:14, marginBottom:8 }}>💪 Practise these:</div>
+          {focus.map(([topic, n]) => (
+            <button key={topic} onClick={() => MID[topic] && onStart(MID[topic])} className="tap" style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", background:"#F6F4FF", border:"none", borderRadius:12, padding:"10px 12px", marginBottom:6, cursor:"pointer", fontFamily:"inherit", fontSize:13.5, fontWeight:700, color:C.ink }}>
+              <span>{topic}</span><span><span style={{ color:C.coral }}>{n} ✗</span>{MID[topic] ? <span style={{ color:C.grape }}> · Practise ▶</span> : null}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {log.length === 0 && (<div style={{ background:"#fff", borderRadius:18, padding:"24px 16px", textAlign:"center", color:"#7a7398", boxShadow:"0 4px 0 rgba(43,33,80,.1)" }}>No activity yet.<br/>Do a session and it will show here! ⭐</div>)}
 
