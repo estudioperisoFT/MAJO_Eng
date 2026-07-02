@@ -35,17 +35,20 @@ if(!window.__store){
 
 
 /*
-  Star English v7 — práctica para Majo (Oxford "Bright", Starter–Unit 3)
-  · Inglés didáctico · ilustraciones · sin pistas.
-  · Today's session + Progress (historial) + racha.
-  · Ejercicios generados al vuelo (misma lógica, contenido distinto cada vez).
-  · Sin distractores que sólo cambian por el apóstrofo (isnt/isn't).
-  · NUEVO: siempre se puede iniciar una sesión nueva; cada sesión queda
-    numerada en el historial (Session 1, Session 2…) y no se borra ninguna.
+  Star English v8 — práctica para Majo (Oxford "Bright", Starter–Unit 3)
+  · Basada en el temario de la evaluación integradora (3/7) y los errores
+    reales corregidos en el cuaderno.
+  · NUEVO: temas de Unit 3 y del temario — prepositions of place, mini-lecturas
+    de comprensión, wearing + jobs en 3ª persona, breakfast & how do you come
+    to school, y "Answer about you" (Yes, I do / Yes, I am / Yes, I have).
+  · NUEVO: 3 tipos de ejercicio — elegir (multiple choice), ORDENAR palabras
+    (con distractores tipo "I'm" que hay que dejar afuera) y ESCRIBIR la palabra.
+  · NUEVO: Today's session sube de dificultad sola (elige → ordena → escribe).
+  · NUEVO: selector Easy/Hard para las misiones sueltas.
   · Mantiene las claves de guardado "v5" para conservar el progreso ya hecho.
 */
 
-const VERSION = "v7";
+const VERSION = "v8";
 const C = { ink:"#2B2150", grape:"#6B4EE6", grapeDark:"#5438c9", sun:"#FFC233", grass:"#34BE6B", coral:"#FF6B6B", sky1:"#C9D8FF", sky2:"#EBD9FF" };
 
 const A = 'stroke="#2B2150" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
@@ -77,10 +80,35 @@ const ICON = {
   facehungry:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="46" r="2.8" fill="#2B2150"/><circle cx="58" cy="46" r="2.8" fill="#2B2150"/><path ${A} d="M42 58 Q50 66 58 58 Z"/><path ${A} d="M50 62 L50 66"/>`,
   facescared:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="46" r="3.4" fill="#2B2150"/><circle cx="58" cy="46" r="3.4" fill="#2B2150"/><circle cx="50" cy="62" r="4.5" ${A}/><path ${A} d="M70 36 Q73 43 70 45 Q67 43 70 36"/>`,
   facesad:`<circle cx="50" cy="50" r="24" ${A}/><circle cx="42" cy="46" r="2.8" fill="#2B2150"/><circle cx="58" cy="46" r="2.8" fill="#2B2150"/><path ${A} d="M40 64 Q50 56 60 64"/>`,
+  tshirt:`<path ${A} d="M36 26 L24 36 L32 46 L38 41 L38 78 L62 78 L62 41 L68 46 L76 36 L64 26 Q57 33 50 33 Q43 33 36 26 Z"/>`,
+  shorts:`<path ${A} d="M28 34 L72 34 L76 72 L56 72 L50 52 L44 72 L24 72 Z"/><path ${A} d="M29 42 L71 42"/>`,
+  skirt:`<path ${A} d="M36 34 L64 34 L76 76 L24 76 Z"/><path ${A} d="M37 41 L63 41"/><path ${A} d="M45 44 L41 76 M50 44 L50 76 M55 44 L59 76"/>`,
+  hat:`<ellipse cx="50" cy="62" rx="30" ry="8" ${A}/><path ${A} d="M34 60 Q34 34 50 34 Q66 34 66 60"/>`,
+  dress:`<path ${A} d="M40 26 L44 38 L36 76 L64 76 L56 38 L60 26 M44 38 L56 38"/>`,
+  watch:`<circle cx="50" cy="52" r="16" ${A}/><path ${A} d="M50 44 L50 52 L57 56"/><path ${A} d="M42 38 L44 24 L56 24 L58 38 M42 66 L44 80 L56 80 L58 66"/>`,
 };
 function Icon({ name, size = 64 }) {
   if (!ICON[name]) return null;
   return <span style={{ display: "inline-flex", lineHeight: 0 }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 100 100" width="${size}" height="${size}">${ICON[name]}</svg>` }} />;
+}
+
+// ---------- escenas de preposiciones (pelota y caja) ----------
+const BALL = (cx,cy,r=8) => `<circle cx="${cx}" cy="${cy}" r="${r}" stroke="#2B2150" stroke-width="3.2" fill="#FFC233"/>`;
+const BOX = (x,y,w,h) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" ${A}/>`;
+const PREPSVG = {
+  "on": BOX(32,50,36,28)+BALL(50,42),
+  "in": BOX(32,44,36,30)+BALL(50,60),
+  "under": BOX(32,34,36,26)+`<path ${A} d="M36 60 L36 80 M64 60 L64 80"/>`+BALL(50,72),
+  "above": BOX(32,54,36,26)+BALL(50,26),
+  "behind": BALL(64,42,9)+BOX(28,46,38,30),
+  "in front of": BOX(30,34,40,32)+BALL(50,64,9),
+  "between": BOX(10,46,26,26)+BOX(64,46,26,26)+BALL(50,64,9),
+  "next to": BOX(26,44,32,28)+BALL(74,64,9),
+};
+const PREPS = Object.keys(PREPSVG);
+function PrepScene({ prep, size = 110 }) {
+  const inner = PREPSVG[prep]; if (!inner) return null;
+  return <span style={{ display:"inline-flex", lineHeight:0 }} dangerouslySetInnerHTML={{ __html: `<svg viewBox="0 0 100 100" width="${size}" height="${size}"><path d="M8 84 L92 84" stroke="#cfd8f5" stroke-width="3" stroke-linecap="round"/>${inner}</svg>` }} />;
 }
 
 // ---------- utilidades aleatorias ----------
@@ -88,7 +116,14 @@ const pick = (a) => a[(Math.random() * a.length) | 0];
 const coin = () => Math.random() < 0.5;
 function shuffle(a) { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; } return b; }
 const pickBut = (a, notVal) => { let x = pick(a); let g = 0; while (x === notVal && g++ < 20) x = pick(a); return x; };
-const sig = (q) => (q.text || q.context || "") + "|" + q.answer + "|" + (q.pics ? q.pics.join(",") : "") + "|" + (q.swatch || "");
+const normalize = (s) => String(s == null ? "" : s).toUpperCase().replace(/[’‘]/g,"'").replace(/\s+/g," ").trim();
+const sig = (q) => (q.text || "") + "|" + (q.context || "") + "|" + q.answer + "|" + (q.type || "mc") + "|" + (q.pics ? q.pics.join(",") : "") + "|" + (q.prepScene || "") + (q.swatch || "");
+const isCorrect = (q, val) => q.type === "spell" ? normalize(val) === normalize(q.answer) : val === q.answer;
+
+// arma un ejercicio de ordenar palabras; decoys = fichas trampa que sobran
+function orderQ({ sentence, decoys = [], context, ask, pics, badge, tip, prepScene }) {
+  return { type:"order", words: shuffle([...sentence.split(" "), ...decoys]), answer: sentence, context, ask: ask || "Tap the words in order.", pics, badge, tip, prepScene };
+}
 
 // ---------- bancos de contenido ----------
 const SING = [ {w:"park",icon:"tree"}, {w:"castle",icon:"castle"}, {w:"shop",icon:"shop"}, {w:"school",icon:"house"}, {w:"hospital",icon:"house"}, {w:"station",icon:"house"} ];
@@ -112,22 +147,35 @@ const SPELL = [
   {w:"train",icon:"train",d:["tran","trian"]}, {w:"plane",icon:"plane",d:["plaen","plan"]},
   {w:"green",swatch:"#34BE6B",d:["gren","grean"]}, {w:"orange",swatch:"#FF8A3D",d:["orage","orenge"]}, {w:"yellow",swatch:"#FFC233",d:["yellou","yelow"]},
 ];
+const CLOTHES = [ {w:"t-shirt",icon:"tshirt"}, {w:"dress",icon:"dress"}, {w:"shorts",icon:"shorts"}, {w:"skirt",icon:"skirt"}, {w:"hat",icon:"hat"} ];
+const CLOTHES_SPELL = CLOTHES.filter((c) => c.w !== "t-shirt");
+const CITY = [ {w:"park",icon:"tree"}, {w:"school",icon:"house"}, {w:"shop",icon:"shop"}, {w:"castle",icon:"castle"}, {w:"cinema",icon:"house"}, {w:"museum",icon:"house"}, {w:"hospital",icon:"house"}, {w:"station",icon:"house"} ];
+const PREP_TXT = ["opposite","next to","behind","in front of"];
+const BREAKFAST = ["milk and toast","juice and toast","milk and eggs","tea and bread"];
+const TRANSPORT = [ {s:"I come to school by bus.",icon:"bus",bad:"I'm come to school by bus."}, {s:"I come to school by car.",icon:"car",bad:"I'm come to school by car."}, {s:"I come to school by bike.",icon:"bike",bad:"I come to school in bike."}, {s:"I walk to school.",bad:"I'm walk to school."} ];
+const RD_SHE = ["Sara","Mia","Lily","Nina"], RD_HE = ["Tom","Ben","Leo","Sam"];
 
-// ---------- generadores (una pregunta por llamada) ----------
-function oneThereIs() {
-  if (coin()) { // singular
-    const pl = pick(SING), yes = coin();
-    const answer = yes ? "Yes, there is." : "No, there isn't.";
-    const other = yes ? "Yes, there are." : "No, there aren't.";
-    return { pics:[pl.icon], badge: yes?"yes":"no", text:`Is there a ${pl.w}?`, options: shuffle([answer, other]), answer, tip:"One thing → there is / there isn't." };
-  } else { // plural
-    const pl = pick(PLUR), yes = coin();
-    const answer = yes ? "Yes, there are." : "No, there aren't.";
-    const other = yes ? "Yes, there is." : "No, there isn't.";
-    return { pics:[pl.icon, pl.icon], badge: yes?"yes":"no", text:`Are there any ${pl.w}?`, options: shuffle([answer, other]), answer, tip:"Many things → there are / there aren't." };
-  }
+// ---------- generadores (una pregunta por llamada; mode = mc | order | spell) ----------
+function oneThereIs(mode) {
+  const singular = coin(), yes = coin();
+  const pl = singular ? pick(SING) : pick(PLUR);
+  const qtext = singular ? `Is there a ${pl.w}?` : `Are there any ${pl.w}?`;
+  const answer = singular ? (yes ? "Yes, there is." : "No, there isn't.") : (yes ? "Yes, there are." : "No, there aren't.");
+  const wrongVerb = singular ? (yes ? "are." : "aren't.") : (yes ? "is." : "isn't.");
+  const pics = singular ? [pl.icon] : [pl.icon, pl.icon];
+  const tip = singular ? "One thing → there is / there isn't." : "Many things → there are / there aren't.";
+  if (mode === "order") return orderQ({ sentence: answer, decoys: [wrongVerb], pics, badge: yes?"yes":"no", context: qtext, tip });
+  const other = singular ? (yes ? "Yes, there are." : "No, there aren't.") : (yes ? "Yes, there is." : "No, there isn't.");
+  return { pics, badge: yes?"yes":"no", text: qtext, options: shuffle([answer, other]), answer, tip };
 }
-function oneILike() {
+function oneILike(mode) {
+  if (mode === "order") {
+    const t = (Math.random() * 4) | 0;
+    if (t === 0) { const x = pick(LIKEABLE); return orderQ({ sentence:`I like ${x.w}.`, decoys:["I'm"], pics: x.icon?[x.icon]:undefined, tip:"I like — without I'm." }); }
+    if (t === 1) { const a = pick(ACTIONS); return orderQ({ sentence:`I can ${a.w}.`, decoys:["I'm"], pics: a.icon?[a.icon]:undefined, tip:"I can — without I'm." }); }
+    if (t === 2) { const o = pick(HAVE); return orderQ({ sentence:`I've got ${o.w}.`, decoys:["I'm"], pics: o.icon?[o.icon]:undefined, tip:"I've got = I have." }); }
+    const f = pick(FEEL); return orderQ({ sentence:`I'm ${f.w}.`, decoys:["like"], pics:[f.icon], tip:"Feelings → I'm happy." });
+  }
   const t = (Math.random() * 5) | 0;
   if (t === 0) { const f = pick(FEEL); return { pics:[f.icon], text:`I ___ ${f.w}.`, options: shuffle(["I'm","I like"]), answer:"I'm", tip:"Use I'm for feelings: I'm happy." }; }
   if (t === 1) { const x = pick(LIKEABLE); return { pics: x.icon?[x.icon]:undefined, text:`I ___ ${x.w}.`, options: shuffle(["I like","I'm like"]), answer:"I like", tip:"Use I like with a word." }; }
@@ -135,19 +183,31 @@ function oneILike() {
   if (t === 3) { const o = pick(HAVE); return { pics: o.icon?[o.icon]:undefined, text:`I ___ ${o.w}.`, options: shuffle(["I've got","I'm have"]), answer:"I've got", tip:"I've got = I have." }; }
   const p = pick(PLACES); return { text:`I ___ from ${p}.`, options: shuffle(["I'm","I like"]), answer:"I'm", tip:"Use I'm from + place." };
 }
-function oneThisThese() {
-  const v = pick(VEH), t = (Math.random() * 3) | 0;
+function oneThisThese(mode) {
+  const v = pick(VEH);
+  if (mode === "order") {
+    if (coin()) return orderQ({ sentence:`This is my ${v.s}.`, decoys:["These","are"], pics:[v.icon], tip:"One → This is." });
+    return orderQ({ sentence:`These are my ${v.p}.`, decoys:["This","is"], pics:[v.icon, v.icon], tip:"Many → These are." });
+  }
+  const t = (Math.random() * 3) | 0;
   if (t === 0) return { pics:[v.icon], text:`___ a ${v.s}.`, options: shuffle(["This is","These are"]), answer:"This is", tip:"One → This is." };
   if (t === 1) return { pics:[v.icon, v.icon], text:`___ my ${v.p}.`, options: shuffle(["This is","These are"]), answer:"These are", tip:"Many → These are." };
   return { pics:[v.icon, v.icon], text:"These are my ___.", options: shuffle([v.s, v.p]), answer: v.p, tip:"Add -s for many." };
 }
-function oneSpell(word) {
+function oneSpell(mode, word) {
   const s = word || pick(SPELL);
   const base = s.swatch ? { swatch: s.swatch } : { pics: [s.icon] };
+  if (mode === "spell") return { ...base, type:"spell", ask:"Look and write the word.", answer: s.w };
   return { ...base, ask:"Which one is correct?", options: shuffle([s.w, s.d[0], s.d[1]]), answer: s.w };
 }
-function oneYesNo() {
-  const pron = coin() ? "she" : "he", t = (Math.random() * 3) | 0;
+function oneYesNo(mode) {
+  const pron = coin() ? "she" : "he", otherP = pron === "she" ? "he" : "she";
+  if (mode === "order") {
+    const yes = coin();
+    if (coin()) { const v = pick(VEH); return orderQ({ sentence: yes?`Yes, ${pron} has.`:`No, ${pron} hasn't.`, decoys:[otherP], pics:[v.icon], badge: yes?"yes":"no", context:`Has ${pron} got a ${v.s}?`, tip:"Has … got? → has / hasn't." }); }
+    const f = pick(FEEL); return orderQ({ sentence: yes?`Yes, ${pron} is.`:`No, ${pron} isn't.`, decoys:[otherP], pics:[f.icon], badge: yes?"yes":"no", context:`Is ${pron} ${f.w}?`, tip:`${pron} in the question → ${pron} in the answer.` });
+  }
+  const t = (Math.random() * 3) | 0;
   if (t === 2) { // has got
     const v = pick(VEH), yes = coin();
     const answer = yes ? `Yes, ${pron} has.` : `No, ${pron} hasn't.`;
@@ -160,19 +220,16 @@ function oneYesNo() {
     const yes = askJob === j.w;
     const answer = yes ? `Yes, ${pron} is.` : `No, ${pron} isn't.`;
     const opp = yes ? `No, ${pron} isn't.` : `Yes, ${pron} is.`;
-    const otherP = pron === "she" ? "he" : "she";
     return { pics:[j.icon], text:`Is ${pron} a ${askJob}?`, options: shuffle([answer, opp, `${yes?"Yes":"No"}, ${otherP} ${yes?"is.":"isn't."}`]), answer };
   }
-  // feeling
   const f = pick(FEEL), match = coin();
   const askF = match ? f.w : pickBut(FEEL, f).w;
   const yes = askF === f.w;
   const answer = yes ? `Yes, ${pron} is.` : `No, ${pron} isn't.`;
   const opp = yes ? `No, ${pron} isn't.` : `Yes, ${pron} is.`;
-  const otherP = pron === "she" ? "he" : "she";
   return { pics:[f.icon], text:`Is ${pron} ${askF}?`, options: shuffle([answer, opp, `${yes?"Yes":"No"}, ${otherP} ${yes?"is.":"isn't."}`]), answer };
 }
-function oneQuestion() {
+function oneQuestion(mode) {
   const t = (Math.random() * 7) | 0; let context, correct, d;
   if (t === 0) { const n = pick(NAMES); context = `Friend: My name is ${n}.`; correct = "What's your name?"; d = ["What you name?","What name your?"]; }
   else if (t === 1) { const a = pick([7,8,9,10]); context = `Friend: I'm ${a}.`; correct = "How old are you?"; d = ["How old you are?","How you old?"]; }
@@ -181,10 +238,16 @@ function oneQuestion() {
   else if (t === 4) { const x = pick(["a dog","a bike","a watch"]); context = `Friend: Yes, I have. I've got ${x}.`; correct = `Have you got ${x}?`; d = [`You have ${x}?`,`Got you ${x}?`]; }
   else if (t === 5) { const m = pick(MONTHS); context = `Friend: It's in ${m}.`; correct = "When is your birthday?"; d = ["When your birthday?","When birthday you?"]; }
   else { const x = pick(["a t-shirt","a dress","shorts"]); context = `Friend: I'm wearing ${x}.`; correct = "What are you wearing?"; d = ["What you wearing?","What wearing you?"]; }
+  if (mode === "order") return orderQ({ sentence: correct, context, ask:"Make the question.", tip:"Word order matters!" });
   return { context, ask:"Choose the question.", options: shuffle([correct, d[0], d[1]]), answer: correct };
 }
-function oneConnect() {
-  const FD = ["pizza","soup","apples","bananas","chicken","rice"], t = (Math.random() * 6) | 0;
+function oneConnect(mode) {
+  const FD = ["pizza","soup","apples","bananas","chicken","rice"];
+  if (mode === "order") {
+    if (coin()) { const a = pick(FD), b = pickBut(FD, a); return orderQ({ sentence:`I like ${a} but I don't like ${b}.`, decoys:["and"], tip:"A different idea → but." }); }
+    const a = pick(FD), b = pickBut(FD, a); return orderQ({ sentence:`I don't like ${a} or ${b}.`, decoys:["and"], tip:"After don't like → or." });
+  }
+  const t = (Math.random() * 6) | 0;
   if (t === 0) { const a = pick(FD), b = pickBut(FD, a); return { text:`I like ${a} ___ I don't like ${b}.`, options: shuffle(["and","but","or"]), answer:"but", tip:"A different idea → but." }; }
   if (t === 1) { const a = pick(FD), b = pickBut(FD, a); return { text:`I like ${a} ___ ${b}.`, options: shuffle(["and","but","or"]), answer:"and", tip:"Adding things → and." }; }
   if (t === 2) { const a = pick(FD), b = pickBut(FD, a); return { text:`I don't like ${a} ___ ${b}.`, options: shuffle(["and","but","or"]), answer:"or", tip:"After don't like → or." }; }
@@ -192,13 +255,113 @@ function oneConnect() {
   if (t === 4) { const a = pick(["ball","bike","dog","watch"]); const b = pickBut(["ball","bike","dog","watch"], a); return { text:`I've got a ${a} ___ I haven't got a ${b}.`, options: shuffle(["and","but"]), answer:"but" }; }
   const m1 = pick(MONTHS), m2 = pickBut(MONTHS, m1); return { text:`Is your birthday in ${m1} ___ in ${m2}?`, options: shuffle(["and","or"]), answer:"or" };
 }
+function onePrep(mode) {
+  if (mode === "order" || (mode !== "spell" && Math.random() < 0.35)) { // frases "Where's the X?" (incluye opposite)
+    const a = pick(CITY), b = pickBut(CITY, a); const pr = pick(PREP_TXT);
+    const fact = `The ${a.w} is ${pr} the ${b.w}.`;
+    const answer = `It's ${pr} the ${b.w}.`;
+    if (mode === "order") return orderQ({ sentence: answer, context: fact, ask:`Where's the ${a.w}?`, pics:[a.icon], tip:"It's + place word." });
+    const others = shuffle(PREP_TXT.filter((p) => p !== pr)).slice(0, 2).map((p) => `It's ${p} the ${b.w}.`);
+    return { context: fact, text:`Where's the ${a.w}?`, options: shuffle([answer, ...others]), answer, tip:"Read the first sentence again!" };
+  }
+  const pr = pick(PREPS);
+  if (mode === "spell") return { type:"spell", prepScene: pr, text:"The ball is ___ the box.", ask:"Look and write the word.", answer: pr };
+  const others = shuffle(PREPS.filter((p) => p !== pr)).slice(0, 2);
+  return { prepScene: pr, text:"The ball is ___ the box.", options: shuffle([pr, ...others]), answer: pr };
+}
+function oneWearJobs(mode) {
+  if (mode === "spell") { const c = pick(CLOTHES_SPELL); return { type:"spell", pics:[c.icon], ask:"Look and write the word.", answer: c.w }; }
+  const t = (Math.random() * 4) | 0;
+  if (t === 0) { // wearing
+    const c = pick(CLOTHES);
+    if (mode === "order") return orderQ({ sentence:`I'm wearing a ${c.w}.`, decoys:["I"], context:"What are you wearing?", pics:[c.icon], tip:"I'm wearing + a + thing." });
+    return { pics:[c.icon], text:"What are you wearing?", options: shuffle([`I'm wearing a ${c.w}.`, `I wearing a ${c.w}.`, `I'm wearing ${c.w}.`]), answer:`I'm wearing a ${c.w}.`, tip:"I'm wearing + a + thing." };
+  }
+  if (t === 1) { // jobs 3ª persona
+    const j = pick(JOBS), she = coin(); const Pron = she ? "She's" : "He's"; const pos = she ? "her" : "his";
+    if (mode === "order") return orderQ({ sentence:`${Pron} a ${j.w}.`, decoys:[she ? "Her" : "His"], context:`What's ${pos} job?`, pics:[j.icon], tip:`${Pron} = ${she?"She":"He"} is.` });
+    return { pics:[j.icon], text:`What's ${pos} job?`, options: shuffle([`${Pron} a ${j.w}.`, `${she?"She":"He"} a ${j.w}.`, `${she?"Her":"His"} a ${j.w}.`]), answer:`${Pron} a ${j.w}.`, tip:`${Pron} = ${she?"She":"He"} is.` };
+  }
+  if (t === 2) { // how old is he/she
+    const she = coin(); const name = pick(she ? RD_SHE : RD_HE); const Pron = she ? "She's" : "He's"; const pron = she ? "she" : "he";
+    const age = pick([8,9,10,11]);
+    if (mode === "order") return orderQ({ sentence:`${Pron} ${age} years old.`, decoys:["have"], context:`This is ${name}. ${Pron} ${age}.`, ask:`How old is ${pron}?` });
+    const wrongAge = age + (coin() ? 1 : -1);
+    return { context:`This is ${name}. ${Pron} ${age}.`, text:`How old is ${pron}?`, options: shuffle([`${Pron} ${age}.`, `${Pron} ${wrongAge}.`, `${she?"She":"He"} have ${age}.`]), answer:`${Pron} ${age}.` };
+  }
+  // It's his/her + cosa (error real del cuaderno: "his is a watch")
+  const objs = [ {w:"watch",icon:"watch"}, {w:"necklace",icon:"necklace"}, {w:"ball",icon:"football"}, {w:"bike",icon:"bike"}, {w:"dinosaur",icon:"dinosaur"} ];
+  const o = pick(objs); const his = coin(); const pos = his ? "his" : "her";
+  if (mode === "order") return orderQ({ sentence:`It's ${pos} ${o.w}.`, decoys:[his ? "He's" : "She's"], pics:[o.icon], tip:"It's + his/her + thing." });
+  return { pics:[o.icon], text:`___ ${pos} ${o.w}.`, options: shuffle(["It's", his ? "His is" : "Her is", his ? "He's" : "She's"]), answer:"It's", tip:"It's + his/her + thing." };
+}
+function oneAboutYou(mode) {
+  const t = (Math.random() * 4) | 0, yes = coin();
+  let qtext, answer, wrongs, decoy, pics, tip;
+  if (t === 0) { const f = pick(FEEL); qtext = `Are you ${f.w}?`; pics = [f.icon];
+    answer = yes ? "Yes, I am." : "No, I'm not.";
+    wrongs = yes ? ["Yes, I do.","Yes, I have."] : ["No, I don't.","No, I haven't."]; decoy = yes ? "do." : "don't."; tip = "Are you…? → I am / I'm not."; }
+  else if (t === 1) { const x = pick(LIKEABLE); qtext = `Do you like ${x.w}?`; pics = x.icon?[x.icon]:undefined;
+    answer = yes ? "Yes, I do." : "No, I don't.";
+    wrongs = yes ? ["Yes, I am.","Yes, I like."] : ["No, I'm not.","No, I like not."]; decoy = yes ? "am." : "am not."; tip = "Do you…? → I do / I don't."; }
+  else if (t === 2) { const a = pick(ACTIONS); qtext = `Can you ${a.w}?`; pics = a.icon?[a.icon]:undefined;
+    answer = yes ? "Yes, I can." : "No, I can't.";
+    wrongs = yes ? ["Yes, I do.","Yes, I am."] : ["No, I don't.","No, I'm not."]; decoy = yes ? "do." : "don't."; tip = "Can you…? → I can / I can't."; }
+  else { const o = pick(HAVE); qtext = `Have you got ${o.w}?`; pics = o.icon?[o.icon]:undefined;
+    answer = yes ? "Yes, I have." : "No, I haven't.";
+    wrongs = yes ? ["Yes, I do.","Yes, I am."] : ["No, I don't.","No, I'm not."]; decoy = yes ? "do." : "don't."; tip = "Have you got…? → I have / I haven't."; }
+  const badge = yes ? "yes" : "no";
+  if (mode === "order") return orderQ({ sentence: answer, decoys: [decoy], context: qtext, pics, badge, tip });
+  return { pics, badge, text: qtext, options: shuffle([answer, ...wrongs]), answer, tip };
+}
+function oneRoutine(mode) {
+  if (coin()) { // breakfast
+    const b = pick(BREAKFAST);
+    if (mode === "order") return orderQ({ sentence:`I have ${b}.`, decoys:["I'm"], context:"What do you have for breakfast?", tip:"I have + food." });
+    return { text:"What do you have for breakfast?", options: shuffle([`I have ${b}.`, `I'm have ${b}.`, `I has ${b}.`]), answer:`I have ${b}.`, tip:"I have + food." };
+  }
+  const tr = pick(TRANSPORT);
+  if (mode === "order") return orderQ({ sentence: tr.s, decoys:["I'm"], context:"How do you come to school?", pics: tr.icon?[tr.icon]:undefined });
+  const third = tr.s.startsWith("I walk") ? "I walk school." : tr.s.replace(" by ", " with ");
+  return { pics: tr.icon?[tr.icon]:undefined, text:"How do you come to school?", options: shuffle([tr.s, tr.bad, third]), answer: tr.s };
+}
+function oneReading(mode) {
+  const she = coin(); const name = pick(she ? RD_SHE : RD_HE);
+  const pron = she ? "she" : "he", Pron = she ? "She" : "He";
+  const age = pick([8,9,10,11]);
+  const house = pick(["big house","small house","flat"]);
+  const like = pick(LIKEABLE).w, dislike = pickBut(LIKEABLE.map((x) => x.w), like);
+  const canDo = pick(ACTIONS).w, cantDo = pickBut(ACTIONS.map((x) => x.w), canDo);
+  const item = pick(HAVE);
+  const context = `Hello! I'm ${name}. I'm ${age}. I live in a ${house}. I like ${like} but I don't like ${dislike}. I can ${canDo} but I can't ${cantDo}. I've got ${item.w}.`;
+  const t = mode === "order" ? 0 : (Math.random() * 5) | 0;
+  if (t === 0) { // Is Name X? yes/no
+    const match = coin(); const askAge = match ? age : age + 1;
+    const answer = match ? `Yes, ${pron} is.` : `No, ${pron} isn't.`;
+    if (mode === "order") return orderQ({ sentence: answer, decoys:[she ? "he" : "she"], context, ask:`Is ${name} ${askAge}?`, tip:"Read the text again!" });
+    return { context, text:`Is ${name} ${askAge}?`, options: shuffle([answer, match ? `No, ${pron} isn't.` : `Yes, ${pron} is.`, `${match?"Yes":"No"}, ${she?"he":"she"} ${match?"is.":"isn't."}`]), answer, tip:"Read the text again!" };
+  }
+  if (t === 1) return { context, text:`${Pron} can ___.`, options: shuffle([canDo, cantDo, pickBut(ACTIONS.map((x) => x.w), canDo)].filter((v, i, arr) => arr.indexOf(v) === i)), answer: canDo };
+  if (t === 2) { const match = coin(); const askItem = match ? item : pickBut(HAVE, item);
+    const answer = match ? `Yes, ${pron} has.` : `No, ${pron} hasn't.`;
+    return { context, text:`Has ${pron} got ${askItem.w}?`, options: shuffle([answer, match ? `No, ${pron} hasn't.` : `Yes, ${pron} has.`]), answer };
+  }
+  if (t === 3) return { context, text:`${Pron} lives in a ___.`, options: shuffle(["big house","small house","flat"]), answer: house };
+  return { context, text:`How old is ${name}?`, options: shuffle([`${Pron}'s ${age}.`, `${Pron}'s ${age + 1}.`, `${Pron}'s ${age - 1}.`]), answer:`${Pron}'s ${age}.` };
+}
 
-const GEN = { thereis: oneThereIs, ilike: oneILike, thisthese: oneThisThese, spell: oneSpell, yesno: oneYesNo, questions: oneQuestion, connect: oneConnect };
+const GEN = { thereis: oneThereIs, ilike: oneILike, thisthese: oneThisThese, spell: oneSpell, yesno: oneYesNo, questions: oneQuestion, connect: oneConnect, prep: onePrep, wearjobs: oneWearJobs, aboutyou: oneAboutYou, routine: oneRoutine, reading: oneReading };
+const SPELLABLE = { spell: true, prep: true, wearjobs: true };
 
 const MISSIONS = [
   { id:"thereis", emoji:"🏘️", name:"There is / There are", sub:"one is · many are" },
   { id:"ilike", emoji:"💬", name:"I like / I can / I've got", sub:"not 'I'm like'" },
   { id:"thisthese", emoji:"🚂", name:"This is / These are", sub:"one · many + s" },
+  { id:"prep", emoji:"🧭", name:"Prepositions", sub:"on · under · next to" },
+  { id:"wearjobs", emoji:"👕", name:"Wearing & jobs", sub:"I'm wearing · He's a cook" },
+  { id:"aboutyou", emoji:"🙌", name:"Answer about you", sub:"Yes, I do · Yes, I am" },
+  { id:"routine", emoji:"🥣", name:"Breakfast & school", sub:"I have milk · by bus" },
+  { id:"reading", emoji:"📖", name:"Reading stars", sub:"read and answer" },
   { id:"spell", emoji:"✏️", name:"Spelling Stars", sub:"look and choose" },
   { id:"yesno", emoji:"🙋", name:"Yes / No answers", sub:"look at the picture" },
   { id:"questions", emoji:"❓", name:"Make the question", sub:"word order" },
@@ -208,27 +371,31 @@ const MNAME = Object.fromEntries(MISSIONS.map((m) => [m.id, m.name]));
 const MLEN = 8;
 
 // genera un set único (sin repetir) para una misión
-function genMission(id, n = MLEN) {
-  const out = [], seen = new Set();
+function genMission(id, n = MLEN, level = "easy") {
+  const pattern = level === "hard" ? (SPELLABLE[id] ? ["order","mc","spell"] : ["order","mc"]) : ["mc"];
   if (id === "spell") { // sin repetir palabra
     const words = shuffle(SPELL).slice(0, Math.min(n, SPELL.length));
-    return words.map((w) => ({ ...oneSpell(w), _id:id, _mission:MNAME[id] }));
+    return words.map((w, i) => ({ ...oneSpell(level === "hard" && i % 2 === 1 ? "spell" : "mc", w), _id:id, _mission:MNAME[id] }));
   }
+  const out = [], seen = new Set();
   let guard = 0;
-  while (out.length < n && guard++ < n * 12) {
-    const q = GEN[id](); const s = sig(q);
+  while (out.length < n && guard++ < n * 14) {
+    const q = GEN[id](pattern[out.length % pattern.length]); const s = sig(q);
     if (!seen.has(s)) { seen.add(s); out.push({ ...q, _id:id, _mission:MNAME[id] }); }
   }
   return out;
 }
 
-const WEIGHTS = { thereis:3, thisthese:3, spell:3, ilike:2, yesno:2, questions:1, connect:1 };
+const WEIGHTS = { thereis:2, thisthese:2, spell:2, ilike:2, yesno:2, questions:1, connect:1, prep:3, reading:2, wearjobs:2, aboutyou:2, routine:1 };
+const SESSION_MODES = ["mc","mc","mc","mc","order","order","order","hard","hard","hard"];
 function buildSession(n = 10) {
   const bag = []; Object.keys(WEIGHTS).forEach((id) => { for (let i = 0; i < WEIGHTS[id]; i++) bag.push(id); });
   const out = [], seen = new Set(); let guard = 0;
   while (out.length < n && guard++ < n * 14) {
     const id = pick(bag);
-    const q = id === "spell" ? oneSpell() : GEN[id]();
+    let mode = SESSION_MODES[out.length] || "mc";
+    if (mode === "hard") mode = SPELLABLE[id] ? "spell" : "order";
+    const q = GEN[id](mode);
     const s = sig(q);
     if (!seen.has(s)) { seen.add(s); out.push({ ...q, _id:id, _mission:MNAME[id] }); }
   }
@@ -237,7 +404,7 @@ function buildSession(n = 10) {
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const yestStr = () => new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-const descQ = (q) => q.text ? q.text : q.context ? q.context : (q.answer ? "Spelling: " + q.answer : "—");
+const descQ = (q) => q.text ? q.text : q.context ? q.context : q.ask ? q.ask : (q.answer ? "Spelling: " + q.answer : "—");
 const packWrong = (arr) => arr.map((q) => ({ q: descQ(q), a: q.answer, topic: q._mission }));
 
 const CHEERS = ["Great!", "Yes!", "Well done!", "Brilliant!", "Star!", "Super!"];
@@ -262,6 +429,7 @@ function App() {
   const [best, setBest] = useState({});
   const [meta, setMeta] = useState({ streak: 0, lastDay: null, sessions: 0 });
   const [log, setLog] = useState([]);
+  const [level, setLevelState] = useState("easy");
   const [qs, setQs] = useState([]);
   const [title, setTitle] = useState("");
   const [isSession, setIsSession] = useState(false);
@@ -275,17 +443,19 @@ function App() {
     try { const r = await window.storage.get("majo-best-v5"); if (r && r.value) setBest(JSON.parse(r.value)); } catch (e) {}
     try { const r = await window.storage.get("majo-meta-v5"); if (r && r.value) setMeta(JSON.parse(r.value)); } catch (e) {}
     try { const r = await window.storage.get("majo-log-v5"); if (r && r.value) setLog(JSON.parse(r.value)); } catch (e) {}
+    try { const r = await window.storage.get("majo-level"); if (r && r.value === "hard") setLevelState("hard"); } catch (e) {}
   })(); }, []);
   const saveBest = async (n) => { setBest(n); try { await window.storage.set("majo-best-v5", JSON.stringify(n)); } catch (e) {} };
   const saveMeta = async (n) => { setMeta(n); try { await window.storage.set("majo-meta-v5", JSON.stringify(n)); } catch (e) {} };
   const addLog = async (rec) => { const n = [rec, ...log].slice(0, 400); setLog(n); try { await window.storage.set("majo-log-v5", JSON.stringify(n)); } catch (e) {} };
   const clearLog = async () => { setLog([]); try { await window.storage.set("majo-log-v5", JSON.stringify([])); } catch (e) {} };
+  const setLevel = async (l) => { setLevelState(l); try { await window.storage.set("majo-level", l); } catch (e) {} };
 
   const totalStars = Object.values(best).reduce((a, b) => a + b, 0);
   const doneToday = meta.lastDay === todayStr();
   const todayCount = log.filter((r) => r.kind === "Today's session" && r.t.slice(0, 10) === todayStr()).length;
 
-  const startMission = (id) => { setQs(genMission(id)); setTitle(MNAME[id]); setIsSession(false); setMissionId(id); setRetrying(false); setScreen("play"); };
+  const startMission = (id) => { setQs(genMission(id, MLEN, level)); setTitle(MNAME[id]); setIsSession(false); setMissionId(id); setRetrying(false); setScreen("play"); };
   const startSession = () => { setQs(buildSession(10)); setTitle("Today's session"); setIsSession(true); setMissionId(null); setRetrying(false); setScreen("play"); };
 
   const closeSession = (c, t, wrongArr) => {
@@ -326,7 +496,7 @@ function App() {
           <div className="flex items-center" style={{ gap: 6, background:"#fff", borderRadius:999, padding:"6px 12px", boxShadow:"0 3px 0 rgba(43,33,80,.15)", fontWeight:700 }}><StarSvg size={20} /> <span style={{ fontSize: 16 }}>{totalStars}</span></div>
         </div>
 
-        {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} todayCount={todayCount} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
+        {screen === "home" && <Home best={best} meta={meta} doneToday={doneToday} todayCount={todayCount} level={level} setLevel={setLevel} onStart={startMission} onSession={startSession} onProgress={() => setScreen("progress")} />}
         {screen === "play" && <Play qs={qs} title={title} isSession={isSession} onFinish={onFinish} onHome={() => setScreen("home")} />}
         {screen === "end" && <End isSession={isSession} title={title} correct={finalCorrect} total={finalTotal} streak={meta.streak} onAgain={() => (isSession ? startSession() : startMission(missionId))} onHome={() => setScreen("home")} onProgress={() => setScreen("progress")} />}
         {screen === "progress" && <Progress log={log} meta={meta} totalStars={totalStars} onClear={clearLog} onHome={() => setScreen("home")} />}
@@ -337,7 +507,7 @@ function App() {
   );
 }
 
-function Home({ best, meta, doneToday, todayCount, onStart, onSession, onProgress }) {
+function Home({ best, meta, doneToday, todayCount, level, setLevel, onStart, onSession, onProgress }) {
   return (
     <div style={{ animation: "popIn .25s ease" }}>
       <div className="flex items-center" style={{ gap: 12, background:"#fff", borderRadius:22, padding:"14px 16px", marginBottom:12, boxShadow:"0 4px 0 rgba(43,33,80,.12)" }}>
@@ -358,7 +528,14 @@ function Home({ best, meta, doneToday, todayCount, onStart, onSession, onProgres
         <div style={{ fontSize: 22 }}>▶</div>
       </button>
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#6a6390", margin: "0 2px 8px" }}>Or practise one thing:</div>
+      <div className="flex items-center justify-between" style={{ margin: "0 2px 8px" }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#6a6390" }}>Or practise one thing:</div>
+        <div className="flex items-center" style={{ gap: 3, background:"#fff", borderRadius:999, padding:3, boxShadow:"0 2px 0 rgba(43,33,80,.1)" }}>
+          {["easy","hard"].map((l) => (
+            <button key={l} onClick={() => setLevel(l)} className="tap" style={{ border:"none", borderRadius:999, padding:"5px 10px", fontSize:12, fontWeight:800, cursor:"pointer", fontFamily:"inherit", background: level === l ? C.grape : "transparent", color: level === l ? "#fff" : "#7a7398" }}>{l === "easy" ? "🙂 Easy" : "🔥 Hard"}</button>
+          ))}
+        </div>
+      </div>
       <div className="grid" style={{ gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         {MISSIONS.map((m) => {
           const b = best[m.id] || 0;
@@ -383,21 +560,33 @@ function Play({ qs, title, isSession, onFinish, onHome }) {
   const [wrong, setWrong] = useState([]);
   const [cheer, setCheer] = useState("");
   const [pop, setPop] = useState(false);
-  useEffect(() => { setQi(0); setPicked(null); setCorrect(0); setWrong([]); setCheer(""); }, [qs]);
+  const [placed, setPlaced] = useState([]);
+  const [typed, setTyped] = useState("");
+  useEffect(() => { setQi(0); setPicked(null); setCorrect(0); setWrong([]); setCheer(""); setPlaced([]); setTyped(""); }, [qs]);
 
   const q = qs[qi]; if (!q) return null;
   const total = qs.length;
-  const isRight = picked && picked === q.answer;
-  const isWrong = picked && picked !== q.answer;
+  const isRight = picked !== null && isCorrect(q, picked);
+  const isWrong = picked !== null && !isCorrect(q, picked);
   const ask = q._ask || q.ask;
+  const orderTokens = q.type === "order" ? q.answer.split(" ") : null;
 
-  const choose = (opt) => {
-    if (picked) return;
-    setPicked(opt);
-    if (opt === q.answer) { setCorrect((c) => c + 1); setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)]); setPop(true); setTimeout(() => setPop(false), 650); }
+  const finish = (val) => {
+    if (picked !== null) return;
+    setPicked(val);
+    if (isCorrect(q, val)) { setCorrect((c) => c + 1); setCheer(CHEERS[Math.floor(Math.random() * CHEERS.length)]); setPop(true); setTimeout(() => setPop(false), 650); }
     else { setWrong((w) => [...w, q]); setCheer("Almost! Look →"); }
   };
-  const next = () => { if (qi + 1 < total) { setQi(qi + 1); setPicked(null); setCheer(""); } else { onFinish(correct, total, wrong); } };
+  const addWord = (i) => {
+    if (picked !== null) return;
+    const np = [...placed, i];
+    setPlaced(np);
+    if (np.length === orderTokens.length) finish(np.map((ix) => q.words[ix]).join(" "));
+  };
+  const removeWord = (pos) => { if (picked !== null) return; setPlaced(placed.filter((_, j) => j !== pos)); };
+  const next = () => { if (qi + 1 < total) { setQi(qi + 1); setPicked(null); setCheer(""); setPlaced([]); setTyped(""); } else { onFinish(correct, total, wrong); } };
+
+  const chipBase = { border:"none", borderRadius:14, padding:"10px 14px", fontSize:17, fontWeight:600, fontFamily:"inherit", cursor:"pointer" };
 
   return (
     <div style={{ animation: "popIn .2s ease" }}>
@@ -419,25 +608,47 @@ function Play({ qs, title, isSession, onFinish, onHome }) {
 
       <div style={{ background:"#fff", borderRadius:24, padding:18, boxShadow:"0 5px 0 rgba(43,33,80,.12)", animation: isWrong ? "shake .4s ease" : "none", marginBottom:14 }}>
         {q.pics && (<div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:10, marginBottom:8 }}><span style={{ position:"relative", display:"inline-flex", gap:6 }}>{q.pics.map((n, i) => <Icon key={i} name={n} size={66} />)}{q.badge && <Badge kind={q.badge} />}</span></div>)}
+        {q.prepScene && (<div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><span style={{ position:"relative", display:"inline-flex" }}><PrepScene prep={q.prepScene} />{q.badge && <Badge kind={q.badge} />}</span></div>)}
         {q.swatch && (<div style={{ display:"flex", justifyContent:"center", marginBottom:8 }}><span style={{ width:56, height:56, borderRadius:"50%", background:q.swatch, border:"3px solid #2B2150" }} /></div>)}
-        {q.context && <div style={{ fontSize:16, textAlign:"center", color:"#5a5482", marginBottom:6 }}>{q.context}</div>}
+        {q.context && <div style={{ fontSize:16, textAlign:"center", color:"#5a5482", marginBottom:6, lineHeight:1.45 }}>{q.context}</div>}
         {ask && <div style={{ fontSize:14.5, color:"#6a6390", textAlign:"center", marginBottom: q.text ? 4 : 0 }}>{ask}</div>}
         {q.text && <div style={{ fontSize:21, fontWeight:600, textAlign:"center", lineHeight:1.3 }}>{q.text}</div>}
       </div>
 
-      <div className="flex" style={{ flexDirection: "column", gap: 10 }}>
-        {q.options.map((opt) => {
-          let bg = "#fff", fg = C.ink, shadow = "0 4px 0 rgba(43,33,80,.14)", border = "3px solid #fff";
-          if (picked) {
-            if (opt === q.answer) { bg = C.grass; fg = "#fff"; shadow = "0 4px 0 #259652"; border = `3px solid ${C.grass}`; }
-            else if (opt === picked) { bg = C.coral; fg = "#fff"; shadow = "0 4px 0 #d94f4f"; border = `3px solid ${C.coral}`; }
-            else { fg = "#b4afca"; }
-          }
-          return (<button key={opt} className="tap opt" onClick={() => choose(opt)} disabled={!!picked} style={{ background:bg, color:fg, border, borderRadius:16, padding:"15px 16px", fontSize:18, fontWeight:600, cursor: picked ? "default" : "pointer", boxShadow:shadow, fontFamily:"inherit" }}>{opt}</button>);
-        })}
-      </div>
+      {q.type === "order" ? (
+        <div>
+          <div style={{ minHeight: 58, background:"rgba(255,255,255,.72)", border:`2px dashed ${isRight ? C.grass : isWrong ? C.coral : "#b9c4ee"}`, borderRadius:16, padding:8, display:"flex", flexWrap:"wrap", gap:8, alignItems:"center", marginBottom:12 }}>
+            {placed.length === 0 && <span style={{ color:"#9a93c0", fontSize:13, margin:"0 auto" }}>Tap the words below…</span>}
+            {placed.map((ix, pos) => (
+              <button key={pos} onClick={() => removeWord(pos)} className="tap" disabled={picked !== null} style={{ ...chipBase, background: picked !== null ? (isRight ? C.grass : C.coral) : C.grape, color:"#fff", boxShadow:`0 3px 0 ${picked !== null ? (isRight ? "#259652" : "#d94f4f") : C.grapeDark}`, cursor: picked !== null ? "default" : "pointer" }}>{q.words[ix]}</button>
+            ))}
+          </div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8, justifyContent:"center" }}>
+            {q.words.map((w, i) => placed.includes(i) ? null : (
+              <button key={i} onClick={() => addWord(i)} className="tap opt" disabled={picked !== null} style={{ ...chipBase, background:"#fff", color: picked !== null ? "#b4afca" : C.ink, boxShadow:"0 3px 0 rgba(43,33,80,.14)", cursor: picked !== null ? "default" : "pointer" }}>{w}</button>
+            ))}
+          </div>
+        </div>
+      ) : q.type === "spell" ? (
+        <div className="flex" style={{ gap: 8 }}>
+          <input value={typed} disabled={picked !== null} onChange={(e) => setTyped(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && typed.trim()) finish(typed.trim()); }} autoCapitalize="off" autoCorrect="off" spellCheck={false} placeholder="Write here…" style={{ flex:1, minWidth:0, fontSize:20, fontWeight:600, padding:"13px 14px", borderRadius:16, border:`3px solid ${picked !== null ? (isRight ? C.grass : C.coral) : "#fff"}`, boxShadow:"0 4px 0 rgba(43,33,80,.14)", fontFamily:"inherit", color:C.ink, outline:"none", background:"#fff" }} />
+          {picked === null && <button onClick={() => typed.trim() && finish(typed.trim())} className="tap" style={{ background:C.grape, color:"#fff", border:"none", borderRadius:16, padding:"0 20px", fontSize:17, fontWeight:700, cursor:"pointer", boxShadow:`0 4px 0 ${C.grapeDark}`, fontFamily:"inherit" }}>OK</button>}
+        </div>
+      ) : (
+        <div className="flex" style={{ flexDirection: "column", gap: 10 }}>
+          {q.options.map((opt) => {
+            let bg = "#fff", fg = C.ink, shadow = "0 4px 0 rgba(43,33,80,.14)", border = "3px solid #fff";
+            if (picked !== null) {
+              if (opt === q.answer) { bg = C.grass; fg = "#fff"; shadow = "0 4px 0 #259652"; border = `3px solid ${C.grass}`; }
+              else if (opt === picked) { bg = C.coral; fg = "#fff"; shadow = "0 4px 0 #d94f4f"; border = `3px solid ${C.coral}`; }
+              else { fg = "#b4afca"; }
+            }
+            return (<button key={opt} className="tap opt" onClick={() => finish(opt)} disabled={picked !== null} style={{ background:bg, color:fg, border, borderRadius:16, padding:"15px 16px", fontSize:18, fontWeight:600, cursor: picked !== null ? "default" : "pointer", boxShadow:shadow, fontFamily:"inherit" }}>{opt}</button>);
+          })}
+        </div>
+      )}
 
-      {picked && (
+      {picked !== null && (
         <div style={{ marginTop: 14, animation: "popIn .2s ease" }}>
           {isWrong && <div style={{ textAlign: "center", fontWeight: 600, marginBottom: 8 }}>✅ {q.answer}</div>}
           {q.tip && <div style={{ background:"#FFF6DC", border:`2px solid ${C.sun}`, borderRadius:14, padding:"10px 12px", fontSize:13.5, textAlign:"center", marginBottom:10 }}>💡 {q.tip}</div>}
